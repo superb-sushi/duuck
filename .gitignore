@@ -1,0 +1,25 @@
+# Python
+*.pyc
+*.pyo
+__pycache__/
+*.env
+
+# Virtual Environment
+.venv/
+
+# VS Code
+.vscode/
+
+# Node.js
+node_modules/
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build
+build/
+dist/
