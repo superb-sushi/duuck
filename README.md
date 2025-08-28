@@ -15,6 +15,8 @@ pip install -r requirements.txt
 #### Start the Backend Server
 
 ```bash
+cd backend
+.venv\Scripts\activate
 uvicorn app.main:app --reload
 ```
 
@@ -23,12 +25,13 @@ uvicorn app.main:app --reload
 #### Frontend Initial Setup (Run Once)
 
 ```bash
-cd ../frontend-web
+cd frontend-web
 npm i
 ```
 
 #### Start the Frontend Server
 
 ```bash
+cd frontend-web
 npm run dev
 ```
