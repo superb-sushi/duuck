@@ -1,15 +1,27 @@
-const API = "http://127.0.0.1:8000";
+import axios from 'axios';
 
-export async function post(path, body) {
-    const res = await fetch(API + path, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body)
-    });
-    return res.json();
-}
+const api = axios.create({
+  baseURL: 'http://localhost:8000', // Backend server URL
+});
 
-export async function get(path) {
-    const res = await fetch(API + path);
-    return res.json();
-}
+export const get = async (url, params = {}) => {
+  try {
+    const response = await api.get(url, { params });
+    return response.data;
+  } catch (error) {
+    console.error('GET request failed:', error);
+    throw error;
+  }
+};
+
+export const post = async (url, data = {}) => {
+  try {
+    const response = await api.post(url, data);
+    return response.data;
+  } catch (error) {
+    console.error('POST request failed:', error);
+    throw error;
+  }
+};
+
+export default api;

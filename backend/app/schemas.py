@@ -3,7 +3,6 @@ from typing import List, Optional, Dict
 
 class ViewerCreate(BaseModel):
     name: str
-    weekly_budget: float = 0.0
 
 class CreatorCreate(BaseModel):
     handle: str
@@ -12,7 +11,6 @@ class VideoCreate(BaseModel):
     creator_id: int
     title: str
     phash: Optional[str] = None
-    c2pa_status: str = "unknown"
 
 class SessionStart(BaseModel):
     viewer_id: int
@@ -22,12 +20,7 @@ class SessionEventIn(BaseModel):
     video_id: int
     seconds_watched: int
     interactions: int = 0
-    boost_amount: float = 0.0
-
-class BoostIn(BaseModel):
-    viewer_id: int
-    video_id: int
-    amount: float
+    donation_amount: float = 0.0
 
 class APRIn(BaseModel):
     window: str
@@ -36,7 +29,27 @@ class APRIn(BaseModel):
     seconds_watched: int
     nonce: str
 
-class AllocationOut(BaseModel):
-    session_id: int
-    breakdown: List[Dict]
-    total_spent: float
+class BountyCreate(BaseModel):
+    title: str
+    description: Optional[str] = None
+    initial_donation: float
+    competing_creators: List[int] = []  # List of creator IDs joining the bounty
+
+class VoteCreate(BaseModel):
+    bounty_id: int
+    user_id: int
+    video_id: int
+
+class BountyFollow(BaseModel):
+    bounty_id: int
+    user_id: int
+
+class Donation(BaseModel):
+    bounty_id: int
+    user_id: int
+    amount: float
+
+class VideoSubmission(BaseModel):
+    bounty_id: int
+    creator_id: int
+    title: str

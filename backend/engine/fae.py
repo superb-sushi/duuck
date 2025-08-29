@@ -4,7 +4,7 @@ from typing import List, Dict
 import random
 import math
 
-# event: {video_id, creator_id, cqscore, boost_amount}
+# event: {video_id, creator_id, donation_amount}
 def allocate(events: List[Dict], viewer_budget: float, platform_match_pool: float = 0.0, K: int = 25):
     if not events:
         return []
@@ -12,12 +12,11 @@ def allocate(events: List[Dict], viewer_budget: float, platform_match_pool: floa
     videos = list(range(len(events)))
 
     def S(subset_idx):
-        # simple surrogate: sum of cqscore + sqrt(sum boosts)
+        # simple surrogate: sqrt(sum boosts)
         if not subset_idx:
             return 0.0
-        sum_q = sum(events[i]["cqscore"] for i in subset_idx)
-        sum_b = sum(events[i]["boost_amount"] for i in subset_idx)
-        return sum_q + math.sqrt(max(0.0, sum_b))
+        sum_b = sum(events[i]["donation_amount"] for i in subset_idx)
+        return math.sqrt(max(0.0, sum_b))
 
     shapley = [0.0] * len(events)
     for _ in range(K):
@@ -56,8 +55,7 @@ def allocate(events: List[Dict], viewer_budget: float, platform_match_pool: floa
             "weight": weights[i],
             "amount": allocations[i],
             "components": {
-                "cqscore": events[i]["cqscore"],
-                "boost": events[i]["boost_amount"],
+                "donation": events[i]["donation_amount"],
             },
         }
         for i in range(len(events))

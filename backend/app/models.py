@@ -1,15 +1,26 @@
-from sqlalchemy import Column, Integer, String, Float, Boolean, ForeignKey, DateTime, JSON
+from sqlalchemy import Column, Integer, String, Float, Boolean, ForeignKey, DateTime, JSON, Table
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from .db import Base
+
+# Association table for many-to-many relationship between Bounties and Creators
+bounty_creators = Table(
+    "bounty_creators",
+    Base.metadata,
+    Column("bounty_id", Integer, ForeignKey("bounties.id"), primary_key=True),
+    Column("creator_id", Integer, ForeignKey("creators.id"), primary_key=True)
+)
 
 class Viewer(Base):
     __tablename__ = "viewers"
     id = Column(Integer, primary_key=True)
     name = Column(String)
-    weekly_budget = Column(Float, default=0.0)
     kyc_level = Column(String, default="none")  # none|basic|full
     device_attested = Column(Boolean, default=False)
+    total_donations = Column(Float, default=0.0)
+    time_spent_on_app = Column(Integer, default=0)
+    account_age_days = Column(Integer, default=0)
+    total_interactions = Column(Integer, default=0)  # Total interactions represent the user's interactions with other content
 
 class Creator(Base):
     __tablename__ = "creators"
@@ -42,25 +53,9 @@ class SessionEvent(Base):
     video_id = Column(Integer, ForeignKey("videos.id"))
     seconds_watched = Column(Integer)
     interactions = Column(Integer, default=0)  # likes/comments simplified
-    boost_amount = Column(Float, default=0.0)
-    cqscore = Column(Float, default=0.0)
-
-class Boost(Base):
-    __tablename__ = "boosts"
-    id = Column(Integer, primary_key=True)
-    viewer_id = Column(Integer, ForeignKey("viewers.id"))
-    video_id = Column(Integer, ForeignKey("videos.id"))
-    amount = Column(Float)
-    created_at = Column(DateTime, default=datetime.utcnow)
-
-class Allocation(Base):
-    __tablename__ = "allocations"
-    id = Column(Integer, primary_key=True)
-    session_id = Column(Integer, ForeignKey("sessions.id"))
-    creator_id = Column(Integer, ForeignKey("creators.id"))
-    weight = Column(Float)
-    amount = Column(Float)
-    components = Column(JSON)  # explanation parts
+    donation_amount = Column(Float, default=0.0)
+    target = Column(Integer, nullable=False)
+    status = Column(String, default="pending")  # pending|approved|rejected|under_review
 
 class LedgerEntry(Base):
     __tablename__ = "ledger_entries"
@@ -85,3 +80,36 @@ class MerkleRoot(Base):
     window = Column(String, unique=True)
     root = Column(String)  # hex root
     leaves_count = Column(Integer, default=0)
+
+class Bounty(Base):
+    __tablename__ = "bounties"
+    id = Column(Integer, primary_key=True)
+    title = Column(String, nullable=False)
+    description = Column(String, nullable=True)
+    creator_id = Column(Integer, ForeignKey("creators.id"))
+    status = Column(String, default="open")  # open|voting|ended
+    total_donations = Column(Float, default=0.0)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    creator = relationship("Creator")
+    competing_creators = relationship("Creator", secondary=bounty_creators, backref="bounties")
+
+class Vote(Base):
+    __tablename__ = "votes"
+    id = Column(Integer, primary_key=True)
+    bounty_id = Column(Integer, ForeignKey("bounties.id"))
+    user_id = Column(Integer, ForeignKey("viewers.id"))
+    video_id = Column(Integer, ForeignKey("videos.id"))
+
+class BountyFollow(Base):
+    __tablename__ = "bounty_follows"
+    id = Column(Integer, primary_key=True)
+    bounty_id = Column(Integer, ForeignKey("bounties.id"))
+    user_id = Column(Integer, ForeignKey("viewers.id"))
+
+class Donation(Base):
+    __tablename__ = "donations"
+    id = Column(Integer, primary_key=True)
+    bounty_id = Column(Integer, ForeignKey("bounties.id"))
+    user_id = Column(Integer, ForeignKey("viewers.id"))
+    amount = Column(Float, nullable=False)
