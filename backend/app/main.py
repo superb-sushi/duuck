@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI, Depends #, HTTPException
 from sqlalchemy.orm import Session
 from datetime import datetime
 import hashlib
@@ -10,6 +10,9 @@ from .risk import viewer_ok, creator_reserve_pct
 from engine.cqscore import compute as cq_compute
 from engine.fae import allocate
 from engine.merkle import merkle_root, merkle_proofs, verify_proof
+
+#from .models import Bounty, BountyContribution, BountySubmission, BountyVote
+#from .schemas import BountyCreate, BountyOut
 
 Base.metadata.create_all(bind=engine)
 app = FastAPI(title="Duuck API")
@@ -130,3 +133,71 @@ def apr_verify(window: str, commitment: str, proof: list, db: Session = Depends(
         return {"ok": False, "error": "no root"}
     ok = verify_proof(commitment, proof, mr.root)
     return {"ok": ok, "root": mr.root}
+
+# @app.post("/bounty/create", response_model=BountyOut)
+# def create_bounty(bounty: BountyCreate, db: Session = Depends(get_db)):
+#     new_bounty = Bounty(
+#         description=bounty.description,
+#         cutoff_date=datetime.fromisoformat(bounty.cutoff_date),
+#         judging_start=datetime.fromisoformat(bounty.judging_start),
+#         judging_end=datetime.fromisoformat(bounty.judging_end),
+#         prize_pool=0.0,
+#         is_closed=False
+#     )
+#     db.add(new_bounty)
+#     db.commit()
+#     db.refresh(new_bounty)
+#     return new_bounty
+
+# @app.post("/bounty/{bounty_id}/contribute")
+# def contribute_bounty(bounty_id: int, viewer_id: int, amount: float, db: Session = Depends(get_db)):
+#     bounty = db.get(Bounty, bounty_id)
+#     if not bounty or bounty.is_closed:
+#         raise HTTPException(status_code=404, detail="Bounty not found or closed")
+#     contribution = BountyContribution(bounty_id=bounty_id, viewer_id=viewer_id, amount=amount)
+#     bounty.prize_pool += amount
+#     db.add(contribution)
+#     db.commit()
+#     return {"success": True, "new_prize_pool": bounty.prize_pool}
+
+# @app.post("/bounty/{bounty_id}/submit")
+# def submit_bounty(bounty_id: int, creator_id: int, video_id: int, db: Session = Depends(get_db)):
+#     bounty = db.get(Bounty, bounty_id)
+#     if not bounty or bounty.is_closed or datetime.utcnow() > bounty.cutoff_date:
+#         raise HTTPException(status_code=400, detail="Bounty closed or cutoff passed")
+#     submission = BountySubmission(bounty_id=bounty_id, creator_id=creator_id, video_id=video_id)
+#     db.add(submission)
+#     db.commit()
+#     return {"success": True}
+
+# @app.post("/bounty/{bounty_id}/vote")
+# def vote_bounty(bounty_id: int, submission_id: int, viewer_id: int, db: Session = Depends(get_db)):
+#     bounty = db.get(Bounty, bounty_id)
+#     if not bounty or not (bounty.judging_start <= datetime.utcnow() <= bounty.judging_end):
+#         raise HTTPException(status_code=400, detail="Not in judging period")
+#     vote = BountyVote(bounty_id=bounty_id, submission_id=submission_id, viewer_id=viewer_id)
+#     db.add(vote)
+#     db.commit()
+#     return {"success": True}
+
+# @app.post("/bounty/{bounty_id}/distribute")
+# def distribute_bounty(bounty_id: int, db: Session = Depends(get_db)):
+#     bounty = db.get(Bounty, bounty_id)
+#     if not bounty or datetime.utcnow() < bounty.judging_end or bounty.is_closed:
+#         raise HTTPException(status_code=400, detail="Judging not finished or bounty already closed")
+#     # Count votes per submission
+#     votes = db.query(BountyVote.submission_id).filter(BountyVote.bounty_id == bounty_id).all()
+#     from collections import Counter
+#     vote_counts = Counter([v[0] for v in votes])
+#     top_submissions = [sid for sid, _ in vote_counts.most_common(3)]
+#     # Split prize pool: 50%, 30%, 20%
+#     splits = [0.5, 0.3, 0.2]
+#     for i, sid in enumerate(top_submissions):
+#         submission = db.get(BountySubmission, sid)
+#         if submission:
+#             # Here you would credit the creator (e.g., via ledger)
+#             pass
+#     bounty.is_closed = True
+#     db.commit()
+#     return {"success": True, "top_submissions": top_submissions}
+
