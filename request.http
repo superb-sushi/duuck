@@ -1,0 +1,12 @@
+
+
+POST http://127.0.0.1:8000/viewer/create
+Content-Type: application/json
+{
+  "title": "Test Viewer",
+  "description": "This is a test viewer.",
+  "data": {
+    "key1": "value1",
+    "key2": "value2"
+  }
+}
