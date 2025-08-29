@@ -40,3 +40,18 @@ class AllocationOut(BaseModel):
     session_id: int
     breakdown: List[Dict]
     total_spent: float
+
+# class BountyCreate(BaseModel):
+#     description: str
+#     cutoff_date: str  # ISO format
+#     judging_start: str
+#     judging_end: str
+
+# class BountyOut(BaseModel):
+#     id: int
+#     description: str
+#     prize_pool: float
+#     cutoff_date: str
+#     judging_start: str
+#     judging_end: str
+#     is_closed: bool

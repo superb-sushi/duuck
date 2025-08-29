@@ -85,3 +85,36 @@ class MerkleRoot(Base):
     window = Column(String, unique=True)
     root = Column(String)  # hex root
     leaves_count = Column(Integer, default=0)
+
+# class Bounty(Base):
+#     __tablename__ = "bounties"
+#     id = Column(Integer, primary_key=True)
+#     description = Column(String)
+#     creator_id = Column(Integer, ForeignKey("viewers.id"))  # who created the bounty
+#     prize_pool = Column(Float, default=0.0)
+#     cutoff_date = Column(DateTime)
+#     judging_start = Column(DateTime)
+#     judging_end = Column(DateTime)
+#     is_closed = Column(Boolean, default=False)
+
+# class BountyContribution(Base):
+#     __tablename__ = "bounty_contributions"
+#     id = Column(Integer, primary_key=True)
+#     bounty_id = Column(Integer, ForeignKey("bounties.id"))
+#     viewer_id = Column(Integer, ForeignKey("viewers.id"))
+#     amount = Column(Float)
+
+# class BountySubmission(Base):
+#     __tablename__ = "bounty_submissions"
+#     id = Column(Integer, primary_key=True)
+#     bounty_id = Column(Integer, ForeignKey("bounties.id"))
+#     creator_id = Column(Integer, ForeignKey("creators.id"))
+#     video_id = Column(Integer, ForeignKey("videos.id"))
+#     submitted_at = Column(DateTime, default=datetime.utcnow)
+
+# class BountyVote(Base):
+#     __tablename__ = "bounty_votes"
+#     id = Column(Integer, primary_key=True)
+#     bounty_id = Column(Integer, ForeignKey("bounties.id"))
+#     submission_id = Column(Integer, ForeignKey("bounty_submissions.id"))
+#     viewer_id = Column(Integer, ForeignKey("viewers.id"))
