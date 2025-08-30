@@ -2,40 +2,27 @@ from pydantic import BaseModel
 from typing import List, Optional, Dict
 
 class ViewerCreate(BaseModel):
-    name: str
-    weekly_budget: float = 0.0
+    handle: str  # Changed from name to handle
 
 class CreatorCreate(BaseModel):
-    handle: str
-
-class UserCreate(BaseModel):
-    weekly_budget: float = 0.0
-    kyc_level: str = "none"  # none|basic|full
-    device_attested: bool = False
-    risk_tier: str = "low"  # low|med|high
-    reserve_pct: float = 0.1
-
+    handle: str  # No change needed
 
 class VideoCreate(BaseModel):
-    creator_id: int
+    creator_handle: str  # Changed from creator_id to creator_handle
     title: str
     phash: Optional[str] = None
-    c2pa_status: str = "unknown"
+    c2pa_status: Optional[str] = None  # Added to match the creation logic
 
 class SessionStart(BaseModel):
-    viewer_id: int
+    viewer_handle: str  # Changed from viewer_id to viewer_handle
 
 class SessionEventIn(BaseModel):
     session_id: int
     video_id: int
+    viewer_handle: str  # Changed from viewer_id to viewer_handle
     seconds_watched: int
     interactions: int = 0
-    boost_amount: float = 0.0
-
-class BoostIn(BaseModel):
-    viewer_id: int
-    video_id: int
-    amount: float
+    donation_amount: float = 0.0
 
 class APRIn(BaseModel):
     window: str
