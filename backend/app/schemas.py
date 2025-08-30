@@ -1,57 +1,75 @@
+
 from pydantic import BaseModel
-from typing import List, Optional, Dict
+from typing import Optional, List, Dict
 
-class ViewerCreate(BaseModel):
-    handle: str  # Changed from name to handle
+# ---------- Users ----------
+class UserCreate(BaseModel):
+    handle: Optional[str] = None
+    weekly_budget: float = 0.0
+    kyc_level: str = "none"
+    device_attested: bool = False
+    risk_tier: str = "normal"
+    reserve_pct: float = 0.1
 
-class CreatorCreate(BaseModel):
-    handle: str  # No change needed
+class UserOut(BaseModel):
+    id: int
+    handle: Optional[str] = None
+    weekly_budget: float
+    kyc_level: str
+    device_attested: bool
+    risk_tier: str
+    reserve_pct: float
 
+# ---------- Videos ----------
 class VideoCreate(BaseModel):
-    creator_handle: str  # Changed from creator_id to creator_handle
+    creator_id: int
     title: str
-    phash: Optional[str] = None
-    c2pa_status: Optional[str] = None  # Added to match the creation logic
+    kind: str = "post"
 
-class SessionStart(BaseModel):
-    viewer_handle: str  # Changed from viewer_id to viewer_handle
-
-class SessionEventIn(BaseModel):
-    session_id: int
-    video_id: int
-    viewer_handle: str  # Changed from viewer_id to viewer_handle
-    seconds_watched: int
-    interactions: int = 0
-    donation_amount: float = 0.0
-
+# ---------- APR ----------
 class APRIn(BaseModel):
-    window: str
+    window: str              # YYYYMMDDHH
     session_id: int
     video_id: int
     seconds_watched: int
-    nonce: str
+    interactions: int
+    nonce: str               # client-generated
+    device_hash: Optional[str] = None
 
+# ---------- Paid Requests (livestream) ----------
+class PaidRequestCreate(BaseModel):
+    viewer_id: int
+    creator_id: int
+    title: str
+    description: Optional[str] = None
+    amount: float
+    deadline_iso: Optional[str] = None
+
+class PaidRequestAction(BaseModel):
+    request_id: int
+
+class PaidRequestDeliver(BaseModel):
+    request_id: int
+    video_id: int
+
+# ---------- Bounties ----------
 class BountyCreate(BaseModel):
     title: str
     description: Optional[str] = None
-    initial_donation: float
-    competing_creators: List[str] = []  # Changed to list of creator handles
+    cutoff_dt_iso: Optional[str] = None
 
-class VoteCreate(BaseModel):
+class BountyOut(BaseModel):
+    id: int
+    title: str
+    description: Optional[str]
+    status: str
+    pool_amount: float
+
+class BountySubmissionCreate(BaseModel):
     bounty_id: int
-    viewer_handle: str  # Changed from user_id to viewer_handle
+    creator_id: int
     video_id: int
 
 class BountyFollow(BaseModel):
     bounty_id: int
-    viewer_handle: str  # Changed from user_id to viewer_handle
-
-class Donation(BaseModel):
-    bounty_id: int
-    viewer_handle: str  # Changed from user_id to viewer_handle
-    amount: float
-
-class VideoSubmission(BaseModel):
-    bounty_id: int
-    creator_handle: str  # Changed from creator_id to creator_handle
-    title: str
+    user_id: int

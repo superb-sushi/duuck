@@ -1,114 +1,142 @@
-from sqlalchemy import Column, Integer, String, Float, Boolean, ForeignKey, DateTime, JSON, Table
+
+from sqlalchemy import Column, Integer, String, Float, Boolean, ForeignKey, DateTime, JSON
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from .db import Base
 
-# Association table for many-to-many relationship between Bounties and Creators
-bounty_creators = Table(
-    "bounty_creators",
-    Base.metadata,
-    Column("bounty_id", Integer, ForeignKey("bounties.id"), primary_key=True),
-    Column("creator_handle", String, ForeignKey("creators.handle"), primary_key=True)  # Changed from viewer_handle to creator_handle
-)
-
-class Viewer(Base):
-    __tablename__ = "viewers"
-    handle = Column(String, primary_key=True)  # Changed from id to handle
+# ---------------- Core user/creator/viewer model ----------------
+class User(Base):
+    __tablename__ = "users"
+    id = Column(Integer, primary_key=True)
+    # optional display handle for creators
+    handle = Column(String, unique=True, nullable=True)
+    weekly_budget = Column(Float, default=0.0)
     kyc_level = Column(String, default="none")  # none|basic|full
     device_attested = Column(Boolean, default=False)
-    total_donations = Column(Float, default=0.0)
-    time_spent_on_app = Column(Integer, default=0)
-    account_age_days = Column(Integer, default=0)
-    total_interactions = Column(Integer, default=0)  # Total interactions represent the user's interactions with other content
+    risk_tier = Column(String, default="normal")  # low|normal|high
+    reserve_pct = Column(Float, default=0.1)      # default reserve used if creator
+    created_at = Column(DateTime, default=datetime.utcnow)
 
-class Creator(Base):
-    __tablename__ = "creators"
-    handle = Column(String, primary_key=True)  # Changed from id to handle
-    risk_tier = Column(String, default="low")  # low|med|high
-    reserve_pct = Column(Float, default=0.1)
-
+# ---------------- Videos ----------------
 class Video(Base):
     __tablename__ = "videos"
     id = Column(Integer, primary_key=True)
-    creator_handle = Column(String, ForeignKey("creators.handle"))  # Changed from creator_id to creator_handle
-    title = Column(String)
-    phash = Column(String, nullable=True)  # mock perceptual hash
-    c2pa_status = Column(String, default="unknown")  # unknown|verified|failed
-    creator = relationship("Creator")
+    creator_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    title = Column(String, nullable=False)
+    kind = Column(String, default="post")  # "post" or "live"
+    phash = Column(String, nullable=True)
+    c2pa_status = Column(String, default="unknown")
+    created_at = Column(DateTime, default=datetime.utcnow)
 
+# ---------------- Sessions & events (for APR and AML review) ----------------
 class Session(Base):
     __tablename__ = "sessions"
     id = Column(Integer, primary_key=True)
-    viewer_handle = Column(String, ForeignKey("viewers.handle"))  # Changed from viewer_id to viewer_handle
-    started_at = Column(DateTime, default=datetime.now)
+    viewer_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    started_at = Column(DateTime, default=datetime.utcnow)
     ended_at = Column(DateTime, nullable=True)
-    viewer = relationship("Viewer")
 
 class SessionEvent(Base):
     __tablename__ = "session_events"
     id = Column(Integer, primary_key=True)
-    session_id = Column(Integer, ForeignKey("sessions.id"))
-    video_id = Column(Integer, ForeignKey("videos.id"))
-    viewer_handle = Column(String, ForeignKey("viewers.handle"))  # Added viewer_handle for direct reference
-    seconds_watched = Column(Integer)
-    interactions = Column(Integer, default=0)  # likes/comments simplified
+    session_id = Column(Integer, ForeignKey("sessions.id"), nullable=False)
+    video_id = Column(Integer, ForeignKey("videos.id"), nullable=False)
+    seconds_watched = Column(Integer, default=0)
+    interactions = Column(Integer, default=0)
     donation_amount = Column(Float, default=0.0)
-    target = Column(Integer, nullable=False, default=0)  # Added default value for target
-    status = Column(String, default="pending")  # pending|approved|rejected|under_review
+    target = Column(Integer, default=0)
+    status = Column(String, default="approved")  # approved/under_review/rejected
+    created_at = Column(DateTime, default=datetime.utcnow)
 
+# ---------------- Ledger ----------------
 class LedgerEntry(Base):
     __tablename__ = "ledger_entries"
     id = Column(Integer, primary_key=True)
-    account = Column(String)  # escrow, creator_payable, platform_pool
+    account = Column(String)   # escrow, platform_pool, escrow_reserve, creator_payable
     debit = Column(Float, default=0.0)
     credit = Column(Float, default=0.0)
-    ref_type = Column(String)
-    ref_id = Column(Integer)
+    ref_type = Column(String)  # e.g., fairsplit_fee, paid_request_payout
+    ref_id = Column(Integer)   # related object id
     ts = Column(DateTime, default=datetime.utcnow)
 
+# ---------------- APR receipts & Merkle snapshots ----------------
 class APRCommitment(Base):
     __tablename__ = "apr_commitments"
     id = Column(Integer, primary_key=True)
-    window = Column(String)  # e.g., YYYYMMDDHH
-    commitment = Column(String)  # hex digest
-    meta = Column(JSON)  # {session_id, video_id, viewer_id? (optional)}
+    window = Column(String, index=True)  # YYYYMMDDHH
+    commitment = Column(String)          # sha256 hex
+    meta = Column(JSON)                  # {session_id, video_id, seconds_watched, interactions, nonce, device_hash}
+    created_at = Column(DateTime, default=datetime.utcnow)
 
 class MerkleRoot(Base):
     __tablename__ = "merkle_roots"
     id = Column(Integer, primary_key=True)
     window = Column(String, unique=True)
-    root = Column(String)  # hex root
+    root = Column(String)
     leaves_count = Column(Integer, default=0)
+    created_at = Column(DateTime, default=datetime.utcnow)
 
+# ---------------- Bounty core ----------------
 class Bounty(Base):
     __tablename__ = "bounties"
     id = Column(Integer, primary_key=True)
     title = Column(String, nullable=False)
     description = Column(String, nullable=True)
-    user_creator_handle = Column(String, ForeignKey("viewers.handle"))
-    status = Column(String, default="open")  # open|voting|ended
-    total_donations = Column(Float, default=0.0)
+    status = Column(String, default="open")  # open/closed/ended
+    cutoff_dt = Column(DateTime, nullable=True)
+    pool_amount = Column(Float, default=0.0)
     created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    user_creator = relationship("Viewer", backref="bounties")  # Updated relationship to Viewer
-    competing_creators = relationship("Creator", secondary=bounty_creators, backref="bounties")
 
-class Vote(Base):
-    __tablename__ = "votes"
+class BountySubmission(Base):
+    __tablename__ = "bounty_submissions"
+    id = Column(Integer, primary_key=True)
+    bounty_id = Column(Integer, ForeignKey("bounties.id"), nullable=False)
+    creator_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    video_id = Column(Integer, ForeignKey("videos.id"))
+    submitted_at = Column(DateTime, default=datetime.utcnow)
+
+class BountyVote(Base):
+    __tablename__ = "bounty_votes"
     id = Column(Integer, primary_key=True)
     bounty_id = Column(Integer, ForeignKey("bounties.id"))
-    user_handle = Column(String, ForeignKey("viewers.handle"))  # Changed from user_id to user_handle
-    video_id = Column(Integer, ForeignKey("videos.id"))
+    submission_id = Column(Integer, ForeignKey("bounty_submissions.id"))
+    viewer_id = Column(Integer, ForeignKey("users.id"))
 
 class BountyFollow(Base):
     __tablename__ = "bounty_follows"
     id = Column(Integer, primary_key=True)
     bounty_id = Column(Integer, ForeignKey("bounties.id"))
-    user_handle = Column(String, ForeignKey("viewers.handle"))  # Changed from user_id to user_handle
+    user_id = Column(Integer, ForeignKey("users.id"))
 
 class Donation(Base):
     __tablename__ = "donations"
     id = Column(Integer, primary_key=True)
     bounty_id = Column(Integer, ForeignKey("bounties.id"))
-    user_handle = Column(String, ForeignKey("viewers.handle"))  # Changed from user_id to user_handle
+    user_id = Column(Integer, ForeignKey("users.id"))
     amount = Column(Float, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+# ---------------- Paid livestream requests ----------------
+class PaidRequest(Base):
+    __tablename__ = "paid_requests"
+    id = Column(Integer, primary_key=True)
+    viewer_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    creator_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    title = Column(String, nullable=False)
+    description = Column(String, nullable=True)
+    amount = Column(Float, nullable=False)
+    status = Column(String, default="pending")  # pending/accepted/delivered/approved/rejected/disputed/refunded
+    deadline = Column(DateTime, nullable=True)
+    video_id = Column(Integer, ForeignKey("videos.id"), nullable=True)  # proof attachment
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+class LivestreamTask(Base):
+    __tablename__ = "livestream_tasks"
+    id = Column(Integer, primary_key=True)
+    creator_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    request_id = Column(Integer, ForeignKey("paid_requests.id"), nullable=True)
+    title = Column(String, nullable=False)
+    status = Column(String, default="scheduled")  # scheduled/live/completed/cancelled
+    started_at = Column(DateTime, nullable=True)
+    ended_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)

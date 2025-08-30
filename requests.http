@@ -1,0 +1,94 @@
+GET http://localhost:5173/
+
+###
+
+GET http://localhost:8000/bounty
+
+
+### Test Viewer Creation
+POST http://localhost:8000/viewer/create
+Content-Type: application/json
+
+{
+  "handle": "viewer3"
+}
+
+### Test Creator Creation
+POST http://localhost:8000/creator/create
+Content-Type: application/json
+
+{
+  "handle": "creator3"
+}
+
+### Test Video Creation
+POST http://localhost:8000/video/create
+Content-Type: application/json
+
+{
+  "creator_handle": "creator1",
+  "title": "Sample Video",
+  "phash": "hash123",
+  "c2pa_status": "verified"
+}
+
+### Test Session Start
+POST http://localhost:8000/session/start
+Content-Type: application/json
+
+{
+  "viewer_handle": "viewer1"
+}
+
+### Test Session Event
+POST http://localhost:8000/session/event
+Content-Type: application/json
+
+{
+  "session_id": 1,
+  "video_id": 1,
+  "viewer_handle": "viewer1",
+  "seconds_watched": 120,
+  "interactions": 5,
+  "donation_amount": 10.0
+}
+
+### Test Bounty Creation
+POST http://localhost:8000/bounty/create
+Content-Type: application/json
+
+{
+  "title": "Sample Bounty",
+  "description": "Solve this problem",
+  "creator_handle": "creator1",
+  "initial_donation": 50.0
+}
+
+### Test Bounty Follow
+POST http://localhost:8000/bounty/1/follow
+Content-Type: application/json
+
+{
+  "user_handle": "viewer1"
+}
+
+### Test Bounty Vote
+POST http://localhost:8000/bounty/1/vote
+Content-Type: application/json
+
+{
+  "user_handle": "viewer1",
+  "video_id": 1
+}
+
+### Test Bounty Winners
+GET http://localhost:8000/bounty/1/winners
+
+### Test Suspicious Donations
+GET http://localhost:8000/admin/suspicious-donations
+
+### Test Viewer Profile
+GET http://localhost:8000/admin/viewer/viewer1
+
+### Test Creator Profile
+GET http://localhost:8000/admin/creator/creator1
