@@ -22,7 +22,7 @@ const VotingPage = () => {
     try {
       await axios.post(`/bounty/1/vote`, { // Replace 1 with actual bounty ID
         video_id: videoId,
-        user_id: 1, // Replace with actual user ID
+        user_handle: "user1", // Replace with actual user handle
       });
       alert('Vote cast successfully!');
     } catch (err) {

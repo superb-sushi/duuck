@@ -21,7 +21,7 @@ const BountyListPage = () => {
 
   const followBounty = async (bountyId) => {
     try {
-      await api.post(`/bounty/${bountyId}/follow`, { user_id: 1 }); // Replace with actual user ID
+      await api.post(`/bounty/${bountyId}/follow`, { user_handle: 'user1' }); // Replace with actual user handle
       alert('Bounty followed successfully!');
     } catch (err) {
       alert('Failed to follow bounty.');

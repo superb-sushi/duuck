@@ -28,8 +28,8 @@ async def lifespan(app: FastAPI):
             # Example: Add initial viewers
             if not db.query(models.Viewer).first():
                 viewers = [
-                    models.Viewer(name="Alice", kyc_level="basic", device_attested=True),
-                    models.Viewer(name="Bob", kyc_level="basic", device_attested=True),
+                    models.Viewer(handle="viewer1", kyc_level="basic", device_attested=True),
+                    models.Viewer(handle="viewer2", kyc_level="basic", device_attested=True),
                 ]
                 db.add_all(viewers)
 
@@ -44,22 +44,22 @@ async def lifespan(app: FastAPI):
             # Example: Add initial videos
             if not db.query(models.Video).first():
                 videos = [
-                    models.Video(creator_id=1, title="Video 1", phash="hash1"),
-                    models.Video(creator_id=2, title="Video 2", phash="hash2"),
+                    models.Video(creator_handle="creator1", title="Video 1", phash="hash1"),
+                    models.Video(creator_handle="creator2", title="Video 2", phash="hash2"),
                 ]
                 db.add_all(videos)
 
             # Example: Add initial bounties
             if not db.query(models.Bounty).first():
                 bounties = [
-                    models.Bounty(title="Bounty 1", description="Solve problem 1", creator_id=1, total_donations=50),
-                    models.Bounty(title="Bounty 2", description="Solve problem 2", creator_id=2, total_donations=100),
+                    models.Bounty(title="Bounty 1", description="Solve problem 1", user_creator_handle="viewer1", total_donations=50),
+                    models.Bounty(title="Bounty 2", description="Solve problem 2", user_creator_handle="viewer2", total_donations=100),
                 ]
                 db.add_all(bounties)
 
             # Example: Add initial sessions and session events
             if not db.query(models.Session).first():
-                session = models.Session(viewer_id=1)
+                session = models.Session(viewer_handle="viewer1")
                 db.add(session)
                 db.commit()
                 db.refresh(session)
@@ -67,6 +67,7 @@ async def lifespan(app: FastAPI):
                 session_event = models.SessionEvent(
                     session_id=session.id,
                     video_id=1,
+                    viewer_handle="viewer1",
                     seconds_watched=120,
                     interactions=5,
                     donation_amount=10,
@@ -107,27 +108,27 @@ app.add_middleware(
 
 @app.post("/viewer/create")
 def create_viewer(v: schemas.ViewerCreate, db: Session = Depends(get_db)):
-    viewer = models.Viewer(name=v.name, kyc_level="basic", device_attested=True)
+    viewer = models.Viewer(handle=v.handle, kyc_level="basic", device_attested=True)
     db.add(viewer); db.commit(); db.refresh(viewer)
-    return {"id": viewer.id}
+    return {"status": "success"}
 
 @app.post("/creator/create")
 def create_creator(c: schemas.CreatorCreate, db: Session = Depends(get_db)):
     cr = models.Creator(handle=c.handle, risk_tier="low", reserve_pct=0.1)
     db.add(cr); db.commit(); db.refresh(cr)
-    return {"id": cr.id}
+    return {"status": "success"}
 
 @app.post("/video/create")
 def create_video(v: schemas.VideoCreate, db: Session = Depends(get_db)):
-    vid = models.Video(creator_id=v.creator_id, title=v.title, phash=v.phash, c2pa_status=v.c2pa_status)
+    vid = models.Video(creator_handle=v.creator_handle, title=v.title, phash=v.phash, c2pa_status=v.c2pa_status)
     db.add(vid); db.commit(); db.refresh(vid)
-    return {"id": vid.id}
+    return {"status": "success"}
 
 @app.post("/session/start")
 def session_start(s: schemas.SessionStart, db: Session = Depends(get_db)):
-    if not viewer_ok(db, s.viewer_id):
+    if not viewer_ok(db, s.viewer_handle):
         return {"error": "viewer not allowed"}
-    ses = models.Session(viewer_id=s.viewer_id)
+    ses = models.Session(viewer_handle=s.viewer_handle)
     db.add(ses); db.commit(); db.refresh(ses)
     return {"session_id": ses.id}
 
@@ -147,16 +148,13 @@ def session_event(ev: schemas.SessionEventIn, db: Session = Depends(get_db)):
 
     # Use the fraud detection model to check for suspicious donations
     features = [
-        db.get(models.Session, ev.session_id).viewer_id,
-        video.creator_id,
-        ev.video_id,
         ev.seconds_watched,
         ev.interactions,
-        db.get(models.Viewer, db.get(models.Session, ev.session_id).viewer_id).total_interactions,
+        db.get(models.Viewer, db.get(models.Session, ev.session_id).viewer_handle).total_interactions,
         ev.donation_amount,
-        db.get(models.Viewer, db.get(models.Session, ev.session_id).viewer_id).total_donations,
-        db.get(models.Viewer, db.get(models.Session, ev.session_id).viewer_id).time_spent_on_app,
-        db.get(models.Viewer, db.get(models.Session, ev.session_id).viewer_id).account_age_days
+        db.get(models.Viewer, db.get(models.Session, ev.session_id).viewer_handle).total_donations,
+        db.get(models.Viewer, db.get(models.Session, ev.session_id).viewer_handle).time_spent_on_app,
+        db.get(models.Viewer, db.get(models.Session, ev.session_id).viewer_handle).account_age_days
     ]
     is_suspicious = fraud_model.predict([features])[0]  # Assuming the model returns a boolean
 
@@ -172,7 +170,7 @@ def session_event(ev: schemas.SessionEventIn, db: Session = Depends(get_db)):
 def session_close(session_id: int, platform_match_pool: float = 0.5, db: Session = Depends(get_db)):
     ses = db.get(models.Session, session_id)
     ses.ended_at = datetime.utcnow(); db.commit()
-    viewer = db.get(models.Viewer, ses.viewer_id)
+    viewer = db.get(models.Viewer, ses.viewer_handle)
     events = db.query(models.SessionEvent).filter_by(session_id=session_id).all()
     evt_payload = []
     for e in events:
@@ -188,12 +186,12 @@ def session_close(session_id: int, platform_match_pool: float = 0.5, db: Session
     for a in allocs:
         amount = round(a["amount"], 2)
         total += amount
-        resv = creator_reserve_pct(db, a["creator_id"]) * amount
+        resv = creator_reserve_pct(db, a["creator_handle"]) * amount
         # ledger: move from escrow to creator payable (with reserve to platform_pool for safety)
         ledger_post(db, account="escrow", debit=0.0, credit=amount, ref_type="allocation", ref_id=session_id)
         ledger_post(db, account="creator_payable", debit=amount - resv, credit=0.0, ref_type="allocation", ref_id=session_id)
         ledger_post(db, account="platform_pool", debit=resv, credit=0.0, ref_type="reserve", ref_id=session_id)
-        db.add(models.Allocation(session_id=session_id, creator_id=a["creator_id"], weight=a["weight"], amount=amount, components=a["components"]))
+        db.add(models.Allocation(session_id=session_id, creator_handle=a["creator_handle"], weight=a["weight"], amount=amount, components=a["components"]))
         breakdown.append({
             "creator_id": a["creator_id"],
             "video_id": a["video_id"],
@@ -255,7 +253,7 @@ def get_top_bounties(db: Session = Depends(get_db)):
     return bounties
 
 @app.post("/bounty/{bounty_id}/follow")
-def follow_bounty(bounty_id: int, user_id: int, db: Session = Depends(get_db)):
+def follow_bounty(bounty_id: int, user_handle: str, db: Session = Depends(get_db)):
     """
     Endpoint to allow a user to follow a bounty.
     """
@@ -264,11 +262,11 @@ def follow_bounty(bounty_id: int, user_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Bounty not found")
 
     # Check if the user is already following the bounty
-    existing_follow = db.query(models.BountyFollow).filter_by(bounty_id=bounty_id, user_id=user_id).first()
+    existing_follow = db.query(models.BountyFollow).filter_by(bounty_id=bounty_id, user_handle=user_handle).first()
     if existing_follow:
         raise HTTPException(status_code=400, detail="User already following this bounty")
 
-    follow = models.BountyFollow(bounty_id=bounty_id, user_id=user_id)
+    follow = models.BountyFollow(bounty_id=bounty_id, user_handle=user_handle)
     db.add(follow)
     db.commit()
     return {"message": "Bounty followed successfully"}
@@ -281,13 +279,13 @@ def create_bounty(b: schemas.BountyCreate, db: Session = Depends(get_db)):
     if b.initial_donation < 10:  # Example minimum donation validation
         raise HTTPException(status_code=400, detail="Minimum donation is 10 units")
 
-    bounty = models.Bounty(title=b.title, description=b.description, creator_id=b.creator_id, total_donations=b.initial_donation)
+    bounty = models.Bounty(title=b.title, description=b.description, creator_handle=b.creator_handle, total_donations=b.initial_donation)
     db.add(bounty)
     db.commit()
     db.refresh(bounty)
 
     # Record the initial donation
-    donation = models.Donation(bounty_id=bounty.id, user_id=b.creator_id, amount=b.initial_donation)
+    donation = models.Donation(bounty_id=bounty.id, user_handle=b.creator_handle, amount=b.initial_donation)
     db.add(donation)
     db.commit()
 
@@ -322,7 +320,7 @@ def submit_video(v: schemas.VideoSubmission, db: Session = Depends(get_db)):
     if creator not in bounty.competing_creators:
         bounty.competing_creators.append(creator)
 
-    video = models.Video(creator_id=v.creator_id, title=v.title, bounty_id=v.bounty_id)
+    video = models.Video(creator_handle=v.creator_handle, title=v.title, bounty_id=v.bounty_id)
     db.add(video)
     db.commit()
     db.refresh(video)
@@ -341,11 +339,11 @@ def vote_for_submission(bounty_id: int, v: schemas.VoteCreate, db: Session = Dep
         raise HTTPException(status_code=400, detail="Voting is not active for this bounty")
 
     # Prevent multiple votes by the same user unless allowed by stretch goals
-    existing_vote = db.query(models.Vote).filter_by(bounty_id=bounty_id, user_id=v.user_id).first()
+    existing_vote = db.query(models.Vote).filter_by(bounty_id=bounty_id, user_handle=v.user_handle).first()
     if existing_vote:
         raise HTTPException(status_code=400, detail="User has already voted for this bounty")
 
-    vote = models.Vote(bounty_id=bounty_id, user_id=v.user_id, video_id=v.video_id)
+    vote = models.Vote(bounty_id=bounty_id, user_handle=v.user_handle, video_id=v.video_id)
     db.add(vote)
     db.commit()
     return {"message": "Vote cast successfully"}
@@ -383,24 +381,21 @@ def get_suspicious_donations(db: Session = Depends(get_db)):
     suspicious_events = db.query(models.SessionEvent).filter_by(status="under_review").all()
     return suspicious_events
 
-@app.get("/admin/viewer/{viewer_id}")
-def get_viewer_profile(viewer_id: int, db: Session = Depends(get_db)):
+@app.get("/admin/viewer/{viewer_handle}")
+def get_viewer_profile(viewer_handle: str, db: Session = Depends(get_db)):
     """
     Fetch viewer profile and donation history.
     """
-    viewer = db.get(models.Viewer, viewer_id)
-    if not viewer:
-        raise HTTPException(status_code=404, detail="Viewer not found")
-
-    donations = db.query(models.SessionEvent).filter_by(viewer_id=viewer_id).all()
+    viewer = db.get(models.Viewer, viewer_handle)
+    donations = db.query(models.SessionEvent).filter_by(viewer_handle=viewer_handle).all()
     return {"viewer": viewer, "donations": donations}
 
-@app.get("/admin/creator/{creator_id}")
-def get_creator_profile(creator_id: int, db: Session = Depends(get_db)):
+@app.get("/admin/creator/{creator_handle}")
+def get_creator_profile(creator_handle: str, db: Session = Depends(get_db)):
     """
     Fetch creator profile and associated bounties.
     """
-    creator = db.get(models.Creator, creator_id)
+    creator = db.get(models.Creator, creator_handle)
     if not creator:
         raise HTTPException(status_code=404, detail="Creator not found")
 
