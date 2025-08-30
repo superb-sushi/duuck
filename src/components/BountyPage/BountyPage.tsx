@@ -9,29 +9,29 @@ interface Video {
   title: string;
   creator: string;
   views: string;
-  thumbnail: string;
+  thumbnail: string; //ignore this
   duration: string;
   votes: number;
   likes: number;
 }
 
 interface Bounty {
-  id: string;
-  title: string;
-  contributions: number;
-  deadline: string;
-  videos: Video[];
+  id: string; //
+  description: string; //
+  prize_pool: number; //
+  judging_end: string; //
+  current_videos: Video[];
   following: boolean;
 }
 
 const mockIdeas: Bounty[] = [
   {
     id: "1",
-    title: "24 Hours in Zero Gravity Challenge",
-    contributions: 32500,
-    deadline: "2025-09-01",
+    description: "24 Hours in Zero Gravity Challenge",
+    prize_pool: 32500,
+    judging_end: "2025-09-01",
     following: true,
-    videos: [
+    current_videos: [
       {
         id: "1",
         title: "Testing Zero G Water Drops",
@@ -56,11 +56,11 @@ const mockIdeas: Bounty[] = [
   },
   {
     id: "2",
-    title: "Living Like It's 1823 for 30 Days",
-    contributions: 18750,
-    deadline: "2025-09-20",
+    description: "Living Like It's 1823 for 30 Days",
+    prize_pool: 18750,
+    judging_end: "2025-09-20",
     following: true,
-    videos: [
+    current_videos: [
       {
         id: "3",
         title: "Making Candles from Scratch",
@@ -75,11 +75,11 @@ const mockIdeas: Bounty[] = [
   },
   {
     id: "3",
-    title: "I Bought Every Item in a Gas Station",
-    contributions: 22500,
-    deadline: "2025-08-10",
+    description: "I Bought Every Item in a Gas Station",
+    prize_pool: 22500,
+    judging_end: "2025-08-10",
     following: false,
-    videos: [
+    current_videos: [
       {
         id: "4",
         title: "Gas Station Haul Part 1",
@@ -124,11 +124,11 @@ const mockIdeas: Bounty[] = [
   },
   {
     id: "4",
-    title: "Building the World's Largest Domino Chain",
-    contributions: 45300,
-    deadline: "2025-10-01",
+    description: "Building the World's Largest Domino Chain",
+    prize_pool: 45300,
+    judging_end: "2025-10-01",
     following: true,
-    videos: [
+    current_videos: [
       {
         id: "7",
         title: "Domino Setup Day 1",
@@ -143,19 +143,19 @@ const mockIdeas: Bounty[] = [
   },
   {
     id: "5",
-    title: "Teaching My Grandma to Become a Gamer",
-    contributions: 8900,
-    deadline: "2025-09-25",
+    description: "Teaching My Grandma to Become a Gamer",
+    prize_pool: 8900,
+    judging_end: "2025-09-25",
     following: false,
-    videos: [],
+    current_videos: [],
   },
   {
     id: "6",
-    title: "Recreating Every Movie Genre in 1 Day",
-    contributions: 19200,
-    deadline: "2025-09-18",
+    description: "Recreating Every Movie Genre in 1 Day",
+    prize_pool: 19200,
+    judging_end: "2025-09-18",
     following: true,
-    videos: [
+    current_videos: [
       {
         id: "8",
         title: "Horror Scene Behind the Scenes",
@@ -181,7 +181,7 @@ const mockIdeas: Bounty[] = [
 ];
 
 const BountyPage = () => {
-  const [ideas] = useState<Bounty[]>(mockIdeas);
+  const [ideas, setIdeas] = useState<Bounty[]>(mockIdeas);
   const [selectedIdea, setSelectedIdea] = useState<Bounty | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -195,27 +195,30 @@ const BountyPage = () => {
     setSelectedIdea(null);
   };
 
-  const isOver = (deadline: string) => {
+  const isOver = (judging_end: string) => {
     const daysLeft = Math.ceil(
-      (new Date(deadline).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
+      (new Date(judging_end).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
     );
     return daysLeft < 0;
   }
 
+  const [h, setH] = useState<string>("");
+
   useEffect(() => {
     const getBounties = async () =>{ 
-      const res = await fetch("https://openvision-oq79.onrender.com", {
+      const res = await fetch("https://buuck.onrender.com/bounty", {
           method: "GET",
           headers: { "Content-Type": "application/json" },
       });
-      const data = await res.text(); // gives HTML
-      console.log(data);
+      const data = await res.json();
+      setIdeas(data);
     }
     getBounties();
   }, [])
 
   return (
     <view className="video-ideas-page">
+    <text style="color: white;">{h}</text>
       <view className="content">
         {/* Header */}
         <view className="header">
@@ -234,20 +237,20 @@ const BountyPage = () => {
                 animationDelay: `${index * 100}ms`,
               }}
             >
-              {isOver(idea.deadline) 
+              {isOver(idea.judging_end) 
               ? <BountyCardOver
-                  title={idea.title}
-                  pledged={idea.contributions}
-                  deadline={idea.deadline}
-                  videos={idea.videos}
+                  title={idea.description}
+                  pledged={idea.prize_pool}
+                  deadline={idea.judging_end}
+                  videos={idea.current_videos}
                   modalClick={() => handleInvest(idea)}
                   following={idea.following}
                 />
               : <BountyCard
-                  title={idea.title}
-                  pledged={idea.contributions}
-                  deadline={idea.deadline}
-                  videos={idea.videos}
+                  title={idea.description}
+                  pledged={idea.prize_pool}
+                  deadline={idea.judging_end}
+                  videos={idea.current_videos}
                   modalClick={() => handleInvest(idea)}
                   following={idea.following}
                 />}
@@ -266,10 +269,10 @@ const BountyPage = () => {
         <BountyModal
           isOpen={isModalOpen}
           onClose={closeModal}
-          challengeTitle={selectedIdea.title}
-          currentPledged={selectedIdea.contributions}
-          deadline={selectedIdea.deadline}
-          videos={selectedIdea.videos}
+          challengeTitle={selectedIdea.description}
+          currentPledged={selectedIdea.prize_pool}
+          deadline={selectedIdea.judging_end}
+          videos={selectedIdea.current_videos}
         />
       )}
     </view>
