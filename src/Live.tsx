@@ -14,7 +14,6 @@ export function Live(props: {
   return (
     <view className="app-screen">
       <LiveVideo />
-      {/* <Video /> */}
     </view>
   )
 }

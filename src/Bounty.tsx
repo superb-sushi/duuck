@@ -1,8 +1,8 @@
 import { useEffect } from '@lynx-js/react'
 import './App.css'
-import Video from './components/TikTokVideo/Video.js'
+import BountyPage from './components/BountyPage/BountyPage.js'
 
-export function Vid(props: {
+export function Bounty(props: {
   onRender?: () => void
 }) {
 
@@ -12,7 +12,7 @@ export function Vid(props: {
 
   return (
     <view className="app-screen">
-      <Video />
+      <BountyPage />
     </view>
   )
 }

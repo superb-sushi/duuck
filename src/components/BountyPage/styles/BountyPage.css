@@ -1,0 +1,77 @@
+.video-ideas-page {
+  background-color: var(--background, #111);
+  height: 100vh;
+  font-family: sans-serif;
+  width: 100vw;
+  display: flex;
+  justify-content: center;
+}
+
+.content {
+  padding: 1.5rem 1rem;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 2rem;
+  animation: slide-up 0.6s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.header-h1 {
+  font-size: 3rem;
+  font-weight: 800;
+  margin-bottom: 0.5rem;
+}
+
+.header-h2 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--foreground, #fff);
+  margin-bottom: 0.75rem;
+}
+
+.header-p {
+  font-size: 1.3rem;
+  color: var(--muted-foreground, #aaa);
+  margin: 0 auto;
+}
+
+.gradient-text {
+  color: linear-gradient(90deg, #25f4ee, #fe2c55);
+}
+
+.ideas-grid {
+  overflow-y: hidden;
+  height: 75vh;
+}
+
+.idea-wrapper {
+  animation: slide-up 0.6s ease forwards;
+  opacity: 0;
+}
+
+.footer {
+  text-align: center;
+  margin-top: 3rem;
+  padding-bottom: 1.5rem;
+}
+
+.footer p {
+  font-size: 0.75rem;
+  color: var(--muted-foreground, #aaa);
+}
+
+/* Animations */
+@keyframes slide-up {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}

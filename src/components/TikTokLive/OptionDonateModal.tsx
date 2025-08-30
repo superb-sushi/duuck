@@ -1,4 +1,3 @@
-import { useState } from '@lynx-js/react';
 import CloseIcon from '../../assets/close.png';
 
 interface Option {

@@ -3,7 +3,6 @@ import voteIcon from '../../assets/vote.png';
 import shareIcon from '../../assets/share.png';
 import commentIcon from '../../assets/comment.png';
 import heartIcon from '../../assets/heart.png';
-import VoteModal from './VoteModal.js';
 
 const ActionButtonsVid = () => {
   const [liked, setLiked] = useState(false);
@@ -13,16 +12,15 @@ const ActionButtonsVid = () => {
     setLiked(!liked);
     setLikeCount(prev => liked ? prev - 1 : prev + 1);
   };
-
-  const [isOpen, setIsOpen] = useState<boolean>(false);
   
-  const handleToggleModal = () => {
-    setIsOpen(!isOpen);
+  const handleVote = () => {
+    setIsVoted(!isVoted)
   }
+
+  const [isVoted, setIsVoted] = useState<boolean>(false);
 
   return (
     <>
-    {isOpen && <VoteModal creatorEmail={"bob@example.com"} displayed={isOpen} toggleDisplay={handleToggleModal}/>}
     <view className="action-buttons">
       {/* Like Button */}
       <view className="btn-group">
@@ -52,12 +50,18 @@ const ActionButtonsVid = () => {
       </view>
 
       {/* Vote Button */}
-      <view className="btn-group">
-        <view className="btn-circle vote-btn" bindtap={handleToggleModal}>
+      {isVoted ? <view className="btn-group">
+        <view className="btn-circle vote-btn" bindtap={handleVote}>
           <image src={voteIcon} style="height: 100%; width: 100%;"/>
         </view>
         <text className="btn-label">Vote</text>
       </view>
+      : <view className="btn-group">
+          <view className="btn-circle translucent-btn" bindtap={handleVote}>
+            <image src={voteIcon} style="height: 100%; width: 100%;"/>
+          </view>
+          <text className="btn-label">Vote</text>
+        </view>}
     </view>
     </>
   );

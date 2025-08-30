@@ -597,7 +597,6 @@
 }
 
 .modal-cancel-btn {
-  height: 80%;
   border-radius: 10px;
   border: 1px #DDDDDD;
   display: flex;
@@ -617,7 +616,6 @@
 }
 
 .modal-contribute-btn {
-  height: 80%;
   border-radius: 10px;
   border: 1px #DDDDDD;
   background: linear-gradient(45deg, #25f4ee, #fe2c55);
