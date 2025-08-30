@@ -1,5 +1,11 @@
 import React, { useState } from "react";
+import { BrowserRouter as Router, Route, Routes, Link } from "react-router-dom";
 import { post, get } from "./api";
+import BountyListPage from "./pages/BountyListPage";
+import NewBountySubmissionPage from "./pages/NewBountySubmissionPage";
+import VideoSubmissionPage from "./pages/VideoSubmissionPage";
+import VotingPage from "./pages/VotingPage";
+import ResultsPage from "./pages/ResultsPage";
 
 export default function App() {
     const [viewer, setViewer] = useState(null);
@@ -49,50 +55,68 @@ export default function App() {
     }
 
     return (
-        <div className="container">
-            <h1>Duuck Demo</h1>
-            <div className="row">
-                <button className="btn" onClick={seed}>1) Seed Data</button>
-                <button className="btn" onClick={start} disabled={!viewer}>2) Start Session</button>
-                <button className="btn" onClick={() => watch(videoIds[0], 45, 2, 0.5)} disabled={!sessionId}>Watch Vid1</button>
-                <button className="btn" onClick={() => watch(videoIds[1], 30, 1, 0.0)} disabled={!sessionId}>Watch Vid2</button>
-                <button className="btn" onClick={close} disabled={!sessionId}>3) Close & Allocate</button>
-                <button className="btn" onClick={publishRoot}>4) Publish Merkle Root</button>
-                <button className="btn" onClick={showProofs}>Show Proofs</button>
-            </div>
-            <div className="card" style={{ marginTop: 16 }}>
-                <div><span className="pill">Window</span> {windowId}</div>
-                <div className="small">APR commitments: {commitments.length > 0 ? commitments.join(", ").slice(0, 80) + "…" : "(none)"}</div>
-            </div>
-            {alloc && (
-                <div className="card" style={{ marginTop: 16 }}>
-                    <h2>Transparency Breakdown</h2>
-                    <table className="table">
-                        <thead>
-                            <tr>
-                                <th>Creator</th>
-                                <th>Video</th>
-                                <th>Weight</th>
-                                <th>$ Amount</th>
-                                <th>Explain</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {alloc.breakdown.map((b, i) => (
-                                <tr key={i}>
-                                    <td>{b.creator_id}</td>
-                                    <td>{b.video_id}</td>
-                                    <td>{b.weight}</td>
-                                    <td>${b.amount.toFixed(2)}</td>
-                                    <td className="small">cq:{b.explain.cqscore.toFixed(2)} boost:{b.explain.boost}</td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                    <div>Total Spent Today: ${alloc.total_spent.toFixed(2)}</div>
-                    <div className="small">(Includes platform quadratic match pool.)</div>
+        <Router>
+            <div className="container">
+                <h1>Duuck Demo</h1>
+                <nav>
+                    <ul>
+                        <li><Link to="/bounty">Bounty List</Link></li>
+                        <li><Link to="/new-bounty">Create New Bounty</Link></li>
+                        <li><Link to="/submit-video">Submit Video</Link></li>
+                        <li><Link to="/vote">Vote</Link></li>
+                        <li><Link to="/results">Results</Link></li>
+                    </ul>
+                </nav>
+                <div className="row">
+                    <button className="btn" onClick={seed}>1) Seed Data</button>
+                    <button className="btn" onClick={start} disabled={!viewer}>2) Start Session</button>
+                    <button className="btn" onClick={() => watch(videoIds[0], 45, 2, 0.5)} disabled={!sessionId}>Watch Vid1</button>
+                    <button className="btn" onClick={() => watch(videoIds[1], 30, 1, 0.0)} disabled={!sessionId}>Watch Vid2</button>
+                    <button className="btn" onClick={close} disabled={!sessionId}>3) Close & Allocate</button>
+                    <button className="btn" onClick={publishRoot}>4) Publish Merkle Root</button>
+                    <button className="btn" onClick={showProofs}>Show Proofs</button>
                 </div>
-            )}
-        </div>
+                <div className="card" style={{ marginTop: 16 }}>
+                    <div><span className="pill">Window</span> {windowId}</div>
+                    <div className="small">APR commitments: {commitments.length > 0 ? commitments.join(", ").slice(0, 80) + "…" : "(none)"}</div>
+                </div>
+                {alloc && (
+                    <div className="card" style={{ marginTop: 16 }}>
+                        <h2>Transparency Breakdown</h2>
+                        <table className="table">
+                            <thead>
+                                <tr>
+                                    <th>Creator</th>
+                                    <th>Video</th>
+                                    <th>Weight</th>
+                                    <th>$ Amount</th>
+                                    <th>Explain</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {alloc.breakdown.map((b, i) => (
+                                    <tr key={i}>
+                                        <td>{b.creator_id}</td>
+                                        <td>{b.video_id}</td>
+                                        <td>{b.weight}</td>
+                                        <td>${b.amount.toFixed(2)}</td>
+                                        <td className="small">cq:{b.explain.cqscore.toFixed(2)} boost:{b.explain.boost}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                        <div>Total Spent Today: ${alloc.total_spent.toFixed(2)}</div>
+                        <div className="small">(Includes platform quadratic match pool.)</div>
+                    </div>
+                )}
+                <Routes>
+                    <Route path="/bounty" element={<BountyListPage />} />
+                    <Route path="/new-bounty" element={<NewBountySubmissionPage />} />
+                    <Route path="/submit-video" element={<VideoSubmissionPage />} />
+                    <Route path="/vote" element={<VotingPage />} />
+                    <Route path="/results" element={<ResultsPage />} />
+                </Routes>
+            </div>
+        </Router>
     );
 }

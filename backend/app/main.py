@@ -1,48 +1,95 @@
+import joblib
 from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import SQLAlchemyError
 from datetime import datetime
-import hashlib
 from .db import Base, engine, get_db
 from . import models, schemas
-from .ledger import post as ledger_post
-# from .risk import viewer_ok, creator_reserve_pct
-# Changed the 3 imports below too - Daniel
-from engine.cqscore import compute as cq_compute
-from engine.fae import allocate
-from engine.merkle import merkle_root, merkle_proofs, verify_proof
-
+from contextlib import asynccontextmanager
+from fastapi.middleware.cors import CORSMiddleware
 from .models import Bounty, BountyContribution, BountySubmission, BountyVote, User, BountyFollow
-from .schemas import BountyCreate, BountyOut,UserOut, UserCreate
+from .schemas import BountyCreate, BountyOut, UserCreate
 from .ideaModeration import find_similar_idea,moderate_idea
 
 Base.metadata.create_all(bind=engine)
-app = FastAPI(title="Duuck API")
 
-@app.post("/user/create", response_model=UserOut)
-def create_user(user: UserCreate, db: Session = Depends(get_db)):
+# Load the fraud detection model
+fraud_model = joblib.load("models/fraud_detection_model.pkl")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """
+    Lifespan context manager to load initial data and clean up resources.
+    """
+    with Session(engine) as db:
+        try:
+            # Example: Add initial users
+            if not db.query(models.User).first():
+                users = [
+                    models.User(handle="user1", wallet=100.0, total_donations=10.0, time_spent_on_app=120, account_age_days=365, total_interactions=50),
+                    models.User(handle="user2", wallet=200.0, total_donations=20.0, time_spent_on_app=240, account_age_days=730, total_interactions=100),
+                    models.User(handle="user3", wallet=300.0, total_donations=30.0, time_spent_on_app=360, account_age_days=1095, total_interactions=150),
+                    models.User(handle="user4", wallet=400.0, total_donations=40.0, time_spent_on_app=480, account_age_days=1460, total_interactions=200),
+                    models.User(handle="user5", wallet=500.0, total_donations=50.0, time_spent_on_app=600, account_age_days=1825, total_interactions=250),
+                    models.User(handle="user6", wallet=600.0, total_donations=60.0, time_spent_on_app=720, account_age_days=2190, total_interactions=300),
+                ]
+                db.add_all(users)
+
+            # Example: Add initial videos
+            if not db.query(models.Video).first():
+                videos = [
+                    models.Video(creator_handle="user1", title="Video 1", phash="hash1"),
+                    models.Video(creator_handle="user2", title="Video 2", phash="hash2"),
+                    models.Video(creator_handle="user3", title="Video 3", phash="hash3"),
+                    models.Video(creator_handle="user4", title="Video 4", phash="hash4"),
+                    models.Video(creator_handle="user1", title="Video 5", phash="hash5"),
+                ]
+                db.add_all(videos)
+
+            # Example: Add initial bounties
+            if not db.query(models.Bounty).first():
+                bounties = [
+                    models.Bounty(description="Solve problem 1", creator_handle="user5", prize_pool=50.0, cutoff_date=datetime(2025, 8, 21), judging_start=datetime(2025, 8, 22), judging_end=datetime(2025, 8, 29), is_closed=True),
+                    models.Bounty(description="Solve problem 2", creator_handle="user6", prize_pool=100.0, cutoff_date=datetime(2025, 9, 2), judging_start=datetime(2025, 9, 3), judging_end=datetime(2025, 9, 7), is_closed=False),
+                ]
+                db.add_all(bounties)
+
+            db.commit()
+        except SQLAlchemyError as e:
+            print(f"Error during startup data initialization: {e}")
+
+    yield
+
+    # Cleanup logic
+    with Session(engine) as db:
+        try:
+            # Example cleanup: Remove test data (if needed)
+            db.query(models.Bounty).delete()
+            db.query(models.Video).delete()
+            db.query(models.User).delete()
+            db.commit()
+        except SQLAlchemyError as e:
+            print(f"Error during cleanup: {e}")
+
+app = FastAPI(title="Duuck API", lifespan=lifespan)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000/main.lynx.bundle"],  # Frontend origin
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+@app.post("/user/create")
+def create_user(user_handle: str, db: Session = Depends(get_db)):
     new_user = User(
-        weekly_budget=user.weekly_budget,
-        kyc_level=user.kyc_level,
-        device_attested=user.device_attested,
-        risk_tier=user.risk_tier,
-        reserve_pct=user.reserve_pct
+        user_handle=user_handle,
     )
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
     return new_user
-
-# @app.post("/viewer/create")
-# def create_viewer(v: schemas.ViewerCreate, db: Session = Depends(get_db)):
-#     viewer = models.Viewer(name=v.name, weekly_budget=v.weekly_budget, kyc_level="basic", device_attested=True)
-#     db.add(viewer); db.commit(); db.refresh(viewer)
-#     return {"id": viewer.id}
-
-# @app.post("/creator/create")
-# def create_creator(c: schemas.CreatorCreate, db: Session = Depends(get_db)):
-#     cr = models.Creator(handle=c.handle, risk_tier="low", reserve_pct=0.1)
-#     db.add(cr); db.commit(); db.refresh(cr)
-#     return {"id": cr.id}
 
 @app.post("/video/create")
 def create_video(v: schemas.VideoCreate, db: Session = Depends(get_db)):
@@ -50,106 +97,61 @@ def create_video(v: schemas.VideoCreate, db: Session = Depends(get_db)):
     db.add(vid); db.commit(); db.refresh(vid)
     return {"id": vid.id}
 
+
 @app.post("/session/start")
 def session_start(s: schemas.SessionStart, db: Session = Depends(get_db)):
-    if not viewer_ok(db, s.viewer_id):
-        return {"error": "viewer not allowed"}
-    ses = models.Session(viewer_id=s.viewer_id)
+    ses = models.Session(viewer_handle=s.viewer_handle)
     db.add(ses); db.commit(); db.refresh(ses)
     return {"session_id": ses.id}
 
 @app.post("/session/event")
 def session_event(ev: schemas.SessionEventIn, db: Session = Depends(get_db)):
     video = db.get(models.Video, ev.video_id)
-    cq = cq_compute(ev.seconds_watched, ev.interactions, video)
-    e = models.SessionEvent(session_id=ev.session_id, video_id=ev.video_id, seconds_watched=ev.seconds_watched, interactions=ev.interactions, boost_amount=ev.boost_amount, cqscore=cq)
-    db.add(e); db.commit()
-    if ev.boost_amount and ev.boost_amount > 0:
-        db.add(models.Boost(viewer_id=db.get(models.Session, ev.session_id).viewer_id, video_id=ev.video_id, amount=ev.boost_amount))
+    e = models.SessionEvent(
+        session_id=ev.session_id,
+        video_id=ev.video_id,
+        seconds_watched=ev.seconds_watched,
+        interactions=ev.interactions,
+        donation_amount=ev.donation_amount,
+        status="pending"
+    )
+    db.add(e)
+    db.commit()
+
+    # Use the fraud detection model to check for suspicious donations
+    features = [
+        ev.seconds_watched,
+        ev.interactions,
+        db.get(models.Viewer, db.get(models.Session, ev.session_id).viewer_handle).total_interactions,
+        ev.donation_amount,
+        db.get(models.Viewer, db.get(models.Session, ev.session_id).viewer_handle).total_donations,
+        db.get(models.Viewer, db.get(models.Session, ev.session_id).viewer_handle).time_spent_on_app,
+        db.get(models.Viewer, db.get(models.Session, ev.session_id).viewer_handle).account_age_days
+    ]
+    is_suspicious = fraud_model.predict([features])[0]  # Assuming the model returns a boolean
+
+    if is_suspicious:
+        e.status = "under_review"
         db.commit()
-    ledger_post(db, account="escrow", debit=ev.boost_amount, credit=0.0, ref_type="boost", ref_id=e.id)
-    return {"event_id": e.id, "cqscore": cq}
+        return {"event_id": e.id, "status": "under_review"}
+
+    ledger_post(db, account="escrow", debit=ev.donation_amount, credit=0.0, ref_type="donation", ref_id=e.id)
+    return {"event_id": e.id, "status": "approved"}
 
 @app.post("/session/close")
 def session_close(session_id: int, platform_match_pool: float = 0.5, db: Session = Depends(get_db)):
     ses = db.get(models.Session, session_id)
-    ses.ended_at = datetime.utcnow(); db.commit()
-    viewer = db.get(models.Viewer, ses.viewer_id)
-    events = db.query(models.SessionEvent).filter_by(session_id=session_id).all()
-    evt_payload = []
-    for e in events:
-        vid = db.get(models.Video, e.video_id)
-        evt_payload.append({
-            "video_id": vid.id,
-            "creator_id": vid.creator_id,
-            "cqscore": e.cqscore,
-            "boost_amount": e.boost_amount,
-        })
-    allocs = allocate(evt_payload, viewer.weekly_budget/7.0, platform_match_pool=platform_match_pool, K=25)
-    breakdown = []
-    total = 0.0
-    for a in allocs:
-        amount = round(a["amount"], 2)
-        total += amount
-        resv = creator_reserve_pct(db, a["creator_id"]) * amount
-        # ledger: move from escrow to creator payable (with reserve to platform_pool for safety)
-        ledger_post(db, account="escrow", debit=0.0, credit=amount, ref_type="allocation", ref_id=session_id)
-        ledger_post(db, account="creator_payable", debit=amount - resv, credit=0.0, ref_type="allocation", ref_id=session_id)
-        ledger_post(db, account="platform_pool", debit=resv, credit=0.0, ref_type="reserve", ref_id=session_id)
-        db.add(models.Allocation(session_id=session_id, creator_id=a["creator_id"], weight=a["weight"], amount=amount, components=a["components"]))
-        breakdown.append({
-            "creator_id": a["creator_id"],
-            "video_id": a["video_id"],
-            "amount": amount,
-            "weight": round(a["weight"], 4),
-            "explain": a["components"],
-        })
-    db.commit()
-    return {"session_id": session_id, "breakdown": breakdown, "total_spent": round(total, 2)}
+    ses.ended_at = datetime.now(); db.commit()
+    return {"session_id": session_id}
 
-# --------- APR + Merkle‑FairSplit (Innovation) ---------
+@app.get("/bounty")
+def get_top_bounties(db: Session = Depends(get_db)):
+    """
+    Endpoint to fetch top bounty ideas.
+    """
+    bounties = db.query(models.Bounty).all()  # Default sorting by donations assumed
+    return bounties
 
-@app.post("/apr/commit")
-def apr_commit(apr: schemas.APRIn, db: Session = Depends(get_db)):
-    payload = f"{apr.session_id}|{apr.video_id}|{apr.seconds_watched}|{apr.nonce}".encode()
-    digest = hashlib.sha256(payload).hexdigest()
-    db.add(models.APRCommitment(window=apr.window, commitment=digest, meta={"session_id": apr.session_id, "video_id": apr.video_id}))
-    db.commit()
-    return {"commitment": digest}
-
-@app.post("/apr/publish_root")
-def apr_publish_root(window: str, db: Session = Depends(get_db)):
-    commits = db.query(models.APRCommitment).filter_by(window=window).all()
-    leaves = [c.commitment for c in commits]
-    root = merkle_root(leaves)
-    mr = db.query(models.MerkleRoot).filter_by(window=window).first()
-    if not mr:
-        mr = models.MerkleRoot(window=window, root=root, leaves_count=len(leaves))
-        db.add(mr)
-    else:
-        mr.root = root; mr.leaves_count = len(leaves)
-    db.commit()
-    return {"window": window, "root": root, "count": len(leaves)}
-
-@app.get("/apr/proofs")
-def apr_proofs(window: str, db: Session = Depends(get_db)):
-    commits = db.query(models.APRCommitment).filter_by(window=window).all()
-    leaves = [c.commitment for c in commits]
-    proofs = merkle_proofs(leaves)
-    out = []
-    for i, c in enumerate(commits):
-        out.append({"commitment": c.commitment, "proof": proofs[i]})
-    return {"window": window, "root": merkle_root(leaves), "proofs": out}
-
-@app.post("/apr/verify")
-def apr_verify(window: str, commitment: str, proof: list, db: Session = Depends(get_db)):
-    mr = db.query(models.MerkleRoot).filter_by(window=window).first()
-    if not mr:
-        return {"ok": False, "error": "no root"}
-    ok = verify_proof(commitment, proof, mr.root)
-    return {"ok": ok, "root": mr.root}
-
-# --------- Bounties (Innovation) ---------
 @app.post("/bounty/create", response_model=BountyOut)
 def create_bounty(bounty: BountyCreate, db: Session = Depends(get_db)):
     # Get the user who is creating the bounty
@@ -217,8 +219,8 @@ def contribute_bounty(bounty_id: int, viewer_id: int, amount: float, db: Session
 @app.post("/bounty/{bounty_id}/submit")
 def submit_bounty(bounty_id: int, creator_id: int, video_id: int, db: Session = Depends(get_db)):
     bounty = db.get(Bounty, bounty_id)
-    # if not bounty or bounty.is_closed or datetime.utcnow() > bounty.cutoff_date:
-    #     raise HTTPException(status_code=400, detail="Bounty closed or cutoff passed")
+    if not bounty or bounty.is_closed or datetime.now() > bounty.cutoff_date:
+        raise HTTPException(status_code=400, detail="Bounty closed or cutoff passed")
     
     # Condition 1: User who created the bounty cannot submit
     if bounty.creator_id == creator_id:
@@ -237,7 +239,7 @@ def submit_bounty(bounty_id: int, creator_id: int, video_id: int, db: Session = 
 @app.post("/bounty/{bounty_id}/vote")
 def vote_bounty(bounty_id: int, submission_id: int, viewer_id: int, db: Session = Depends(get_db)):
     bounty = db.get(Bounty, bounty_id)
-    # if not bounty or not (bounty.judging_start <= datetime.utcnow() <= bounty.judging_end):
+    # if not bounty or not (bounty.judging_start <= datetime.now() <= bounty.judging_end):
     #     raise HTTPException(status_code=400, detail="Not in judging period")
    
     # Check if viewer has submitted to this bounty
@@ -258,7 +260,7 @@ def vote_bounty(bounty_id: int, submission_id: int, viewer_id: int, db: Session 
 @app.post("/bounty/{bounty_id}/distribute")
 def distribute_bounty(bounty_id: int, db: Session = Depends(get_db)):
     bounty = db.get(Bounty, bounty_id)
-    if not bounty or datetime.utcnow() < bounty.judging_end or bounty.is_closed:
+    if not bounty or datetime.now() < bounty.judging_end or bounty.is_closed:
         raise HTTPException(status_code=400, detail="Judging not finished or bounty already closed")
     # Count votes per submission
     votes = db.query(BountyVote.submission_id).filter(BountyVote.bounty_id == bounty_id).all()
