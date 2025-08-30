@@ -152,9 +152,14 @@ def apr_verify(window: str, commitment: str, proof: list, db: Session = Depends(
 # --------- Bounties (Innovation) ---------
 @app.post("/bounty/create", response_model=BountyOut)
 def create_bounty(bounty: BountyCreate, db: Session = Depends(get_db)):
-    # User needs at least a minimum amount to create a bounty
+    # Get the user who is creating the bounty
+    user = db.get(User, bounty.creator_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
     if bounty.prize_pool < 10.0:
         raise HTTPException(status_code=400, detail="Invalid prize pool. Prize pool must be at least 10.0")
+    if user.weekly_budget < bounty.prize_pool:
+        raise HTTPException(status_code=400, detail="Insufficient weekly budget to fund prize pool")
     response = moderate_idea(bounty.description)
     if not response.get("is_safe"):
         raise HTTPException(status_code=400, detail="Inappropriate content detected")
@@ -162,6 +167,8 @@ def create_bounty(bounty: BountyCreate, db: Session = Depends(get_db)):
     response = find_similar_idea(bounty.description, [b.description for b in db.query(Bounty).all()])
     if len(response.get("similar")) != 0:
         raise HTTPException(status_code=400, detail="Similar bounty already exists: " + "; ".join(response.get("similar")))
+    # Deduct prize pool from user's weekly_budget
+    user.weekly_budget -= bounty.prize_pool
     new_bounty = Bounty(
         creator_id=bounty.creator_id,
         description=bounty.description,
@@ -194,6 +201,13 @@ def contribute_bounty(bounty_id: int, viewer_id: int, amount: float, db: Session
     bounty = db.get(Bounty, bounty_id)
     if not bounty or bounty.is_closed:
         raise HTTPException(status_code=404, detail="Bounty not found or closed")
+    viewer = db.get(User, viewer_id)
+    if not viewer:
+        raise HTTPException(status_code=404, detail="User not found")
+    if viewer.weekly_budget < amount:
+        raise HTTPException(status_code=400, detail="Insufficient weekly budget to contribute")
+    # Deduct contribution from viewer's weekly_budget
+    viewer.weekly_budget -= amount
     contribution = BountyContribution(bounty_id=bounty_id, viewer_id=viewer_id, amount=amount)
     bounty.prize_pool += amount
     db.add(contribution)
@@ -203,8 +217,8 @@ def contribute_bounty(bounty_id: int, viewer_id: int, amount: float, db: Session
 @app.post("/bounty/{bounty_id}/submit")
 def submit_bounty(bounty_id: int, creator_id: int, video_id: int, db: Session = Depends(get_db)):
     bounty = db.get(Bounty, bounty_id)
-    if not bounty or bounty.is_closed or datetime.utcnow() > bounty.cutoff_date:
-        raise HTTPException(status_code=400, detail="Bounty closed or cutoff passed")
+    # if not bounty or bounty.is_closed or datetime.utcnow() > bounty.cutoff_date:
+    #     raise HTTPException(status_code=400, detail="Bounty closed or cutoff passed")
     
     # Condition 1: User who created the bounty cannot submit
     if bounty.creator_id == creator_id:
@@ -231,10 +245,10 @@ def vote_bounty(bounty_id: int, submission_id: int, viewer_id: int, db: Session 
     if user_submission:
         raise HTTPException(status_code=403, detail="Submitters cannot vote on this bounty.")
 
-    # Check if viewer has already voted for this submission
-    existing_vote = db.query(BountyVote).filter_by(bounty_id=bounty_id, submission_id=submission_id, viewer_id=viewer_id).first()
-    if existing_vote:
-        raise HTTPException(status_code=400, detail="User has already voted for this submission.")
+    # Check if viewer has already voted for any submission in this bounty
+    any_vote = db.query(BountyVote).filter_by(bounty_id=bounty_id, viewer_id=viewer_id).first()
+    if any_vote:
+        raise HTTPException(status_code=400, detail="User has already voted for a submission in this bounty.")
 
     vote = BountyVote(bounty_id=bounty_id, submission_id=submission_id, viewer_id=viewer_id)
     db.add(vote)
@@ -251,17 +265,28 @@ def distribute_bounty(bounty_id: int, db: Session = Depends(get_db)):
     from collections import Counter
     vote_counts = Counter([v[0] for v in votes])
     top_submissions = [sid for sid, _ in vote_counts.most_common(3)]
-    # Split prize pool: 50%, 30%, 20%
-    # TODO Kaiwen's FAE
     splits = [0.5, 0.3, 0.2]
+    winners = []
     for i, sid in enumerate(top_submissions):
         submission = db.get(BountySubmission, sid)
         if submission:
-            # Here you would credit the creator (e.g., via ledger)
-            pass
+            prize = round(bounty.prize_pool * splits[i], 2) if i < len(splits) else 0.0
+            # Add prize to winner's weekly_budget
+            winner = db.get(User, submission.creator_id)
+            if winner:
+                winner.weekly_budget += prize
+            winners.append({
+                "submission_id": sid,
+                "creator_id": submission.creator_id,
+                "video_id": submission.video_id,
+                "prize": prize
+            })
     bounty.is_closed = True
     db.commit()
-    return {"success": True, "top_submissions": top_submissions}
+    return {
+        "success": True,
+        "winners": winners
+    }
 
 @app.get("/bounty/{bounty_id}", response_model=BountyOut)
 def view_bounty(bounty_id: int, db: Session = Depends(get_db)):
