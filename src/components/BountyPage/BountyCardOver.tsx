@@ -10,11 +10,11 @@ interface Video {
   thumbnail: string;
   duration: string;
   votes: number;
+  likes: number;
 }
 
 interface IdeaCardProps {
   title: string;
-  description: string;
   pledged: number;
   deadline: string;
   videos: Video[];
@@ -25,7 +25,6 @@ interface IdeaCardProps {
 
 const BountyCardOver = ({
   title,
-  description,
   pledged,
   deadline,
   videos,
@@ -51,7 +50,7 @@ const BountyCardOver = ({
         </view>
 
         {/* Description */}
-        <text className="idea-description">{description}</text>
+        {/* <text className="idea-description">{description}</text> */}
 
         {/* Meta Info */}
         <view className="idea-meta">

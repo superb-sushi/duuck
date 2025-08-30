@@ -1,6 +1,15 @@
-import reactLynxLogo from '../../assets/react-logo.png'
+interface Video {
+  id: string;
+  title: string;
+  creator: string;
+  views: string;
+  thumbnail: string;
+  duration: string;
+  votes: number;
+  likes: number;
+}
 
-export const UserProfile = () => {
+export const UserProfile = ({video}: {video: Video}) => {
   return (
     <view className="user-profile">
       {/* User Avatar */}
@@ -15,7 +24,7 @@ export const UserProfile = () => {
       
       {/* User Info */}
       <view className="user-info">
-        <text className="username">@cafemonster</text>
+        <text className="username">{video.creator}</text>
         <text className="user-bio">Its makan time! 🎉</text>
       </view>
       

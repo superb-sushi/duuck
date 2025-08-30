@@ -1,6 +1,7 @@
 import { useState } from "react";
 import CloseIcon from "../../assets/close.png";
 import "./styles/BountyModal.css";
+import VideoPage from "../TikTokVideo/Video.js"
 
 interface Video {
   id: string;
@@ -10,13 +11,13 @@ interface Video {
   thumbnail: string;
   duration: string;
   votes: number;
+  likes: number;
 }
 
 interface InvestmentModalProps {
   isOpen: boolean;
   onClose: () => void;
   challengeTitle: string;
-  challengeDescription: string;
   currentPledged: number;
   deadline: string;
   videos: Video[];
@@ -26,7 +27,6 @@ const BountyModal = ({
   isOpen,
   onClose,
   challengeTitle,
-  challengeDescription,
   currentPledged,
   deadline,
   videos
@@ -34,6 +34,17 @@ const BountyModal = ({
   const [creatorName, setCreatorName] = useState("");
   const [activeTab, setActiveTab] = useState<"contribute" | "join" | "videos">("contribute");
   const [investmentAmount, setInvestmentAmount] = useState<number>(0);
+
+  const [isVideoOn, setIsVideoOn] = useState<boolean>(false);
+  const [focusedVideo, setFocusedVideo] = useState<Video>();
+
+  const[modalIsOpen, setModalIsOpen] = useState<boolean>(isOpen);
+
+  const handleGoVideo = (v: Video) => {
+    setIsVideoOn(true);
+    setFocusedVideo(v);
+    setModalIsOpen(false);
+  }
 
   if (!isOpen) return null;
 
@@ -62,12 +73,10 @@ const BountyModal = ({
     onClose();
   };
 
-  function setInputContent(value: any) {
-    throw new Error("Function not implemented.");
-  }
-
   return (
-    <view className="modal-overlay">
+    <>
+    {focusedVideo && <VideoPage video={focusedVideo} toggleVideo={setIsVideoOn} />}
+    <view className={modalIsOpen ? "modal-overlay" : "hidden"}>
       <view className="modal-content">
         <view style={'width: 100%; display: flex; justify-content: flex-end;'}>
           <image src={CloseIcon} className="modal-exit-icon" bindtap={() => onClose()}/>
@@ -75,7 +84,7 @@ const BountyModal = ({
         {/* Header */}
         <view className="modal-header">
           <text className="modal-header-h2">{challengeTitle}</text>
-          <text className="modal-header-p">{challengeDescription}</text>
+          {/* <text className="modal-header-p">{challengeDescription}</text> */}
 
           <view className="challenge-stats">
             <view>
@@ -91,7 +100,7 @@ const BountyModal = ({
         {isOver 
         ? <>
           <view>
-            <text className="invest-header">Top 3 Winners</text>
+            <text className="invest-header" style={'margin-top: 0.75rem'}>Top 3 Winners</text>
           </view>
 
           <view className="tab-panel">
@@ -101,7 +110,7 @@ const BountyModal = ({
             ) : (
               <scroll-view scroll-orientation="vertical" className="video-list">
                 {videos.sort((a, b) => a.votes - b.votes).filter((v, id) => id < 3).map((video, id) => (
-                  <view key={video.id} className={id == 0 ? "video-card-1" : id == 1 ? "video-card-2" : "video-card-3"}>
+                  <view key={video.id} className={id == 0 ? "video-card-1" : id == 1 ? "video-card-2" : "video-card-3"} bindtap={() => handleGoVideo(video)}>
                     <view className="video-thumbnail">
                       <text className="vid-play-btn">▶</text>
                     </view>
@@ -196,7 +205,7 @@ const BountyModal = ({
             ) : (
               <scroll-view scroll-orientation="vertical" className="video-list">
                 {videos.map((video) => (
-                  <view key={video.id} className="video-card">
+                  <view key={video.id} className="video-card" bindtap={() => handleGoVideo(video)}>
                     <view className="video-thumbnail">
                       <text className="vid-play-btn">▶</text>
                     </view>
@@ -214,6 +223,7 @@ const BountyModal = ({
         </>}
       </view>
     </view>
+    </>
   );
 };
 

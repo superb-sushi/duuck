@@ -1,25 +1,29 @@
-import { useCallback, useEffect, useState } from '@lynx-js/react'
+import { useCallback, useEffect, useState, type Dispatch, type SetStateAction } from '@lynx-js/react'
 
 import { UserProfile } from './UserProfileVid.js'
 import ActionButtons from './ActionButtonVid.js'
 import LiveVideoContainerVid from './LiveVideoContainerVid.js'
 import BountyBadge from './BountyBadge.js'
 
-function Video(props: {
-  onRender?: () => void
-}) {
+interface Video {
+  id: string;
+  title: string;
+  creator: string;
+  views: string;
+  thumbnail: string;
+  duration: string;
+  votes: number;
+  likes: number;
+}
 
-  useEffect(() => {
-    console.info('Hello, ReactLynx')
-  }, [])
-  props.onRender?.()
+function Video({video, toggleVideo}: {video: Video, toggleVideo: Dispatch<SetStateAction<boolean>>}) {
 
   return (
     <view className="app-screen">
-      <UserProfile />
-      <ActionButtons />
-      <LiveVideoContainerVid />
-      <BountyBadge />
+      <UserProfile video={video}/>
+      <ActionButtons video={video}/>
+      <LiveVideoContainerVid video={video}/>
+      <BountyBadge video={video} toggleVideo={toggleVideo} />
     </view>
   )
 }

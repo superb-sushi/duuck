@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import BountyCard from "./BountyCard.js";
 import BountyModal from "./BountyModal.js";
 import "./styles/BountyPage.css";
@@ -12,25 +12,23 @@ interface Video {
   thumbnail: string;
   duration: string;
   votes: number;
+  likes: number;
 }
 
-interface VideoIdea {
+interface Bounty {
   id: string;
   title: string;
-  description: string;
-  pledged: number;
+  contributions: number;
   deadline: string;
   videos: Video[];
   following: boolean;
 }
 
-const mockIdeas: VideoIdea[] = [
+const mockIdeas: Bounty[] = [
   {
     id: "1",
     title: "24 Hours in Zero Gravity Challenge",
-    description:
-      "Epic space simulation with real astronaut training. Mind-bending physics experiments and floating food challenges!",
-    pledged: 32500,
+    contributions: 32500,
     deadline: "2025-09-01",
     following: true,
     videos: [
@@ -42,6 +40,7 @@ const mockIdeas: VideoIdea[] = [
         thumbnail: "",
         duration: "0:45",
         votes: 1200,
+        likes: 10029,
       },
       {
         id: "2",
@@ -51,15 +50,14 @@ const mockIdeas: VideoIdea[] = [
         thumbnail: "",
         duration: "1:12",
         votes: 980,
+        likes: 129,
       },
     ],
   },
   {
     id: "2",
     title: "Living Like It's 1823 for 30 Days",
-    description:
-      "No electricity, no modern tech. Building everything from scratch using only 1800s methods and tools.",
-    pledged: 18750,
+    contributions: 18750,
     deadline: "2025-09-20",
     following: true,
     videos: [
@@ -71,15 +69,14 @@ const mockIdeas: VideoIdea[] = [
         thumbnail: "",
         duration: "2:34",
         votes: 450,
+        likes: 928,
       },
     ],
   },
   {
     id: "3",
     title: "I Bought Every Item in a Gas Station",
-    description:
-      "What happens when you literally buy EVERYTHING? From snacks to car accessories to weird novelty items.",
-    pledged: 22500,
+    contributions: 22500,
     deadline: "2025-08-10",
     following: false,
     videos: [
@@ -91,6 +88,7 @@ const mockIdeas: VideoIdea[] = [
         thumbnail: "",
         duration: "8:45",
         votes: 1500,
+        likes: 2932,
       },
       {
         id: "5",
@@ -100,6 +98,7 @@ const mockIdeas: VideoIdea[] = [
         thumbnail: "",
         duration: "6:23",
         votes: 1300,
+        likes: 293802,
       },
       {
         id: "6",
@@ -109,6 +108,7 @@ const mockIdeas: VideoIdea[] = [
         thumbnail: "",
         duration: "12:01",
         votes: 800,
+        likes: 3511,
       },
       {
         id: "10",
@@ -118,15 +118,14 @@ const mockIdeas: VideoIdea[] = [
         thumbnail: "",
         duration: "28:39",
         votes: 10000,
+        likes: 2000012,
       },
     ],
   },
   {
     id: "4",
     title: "Building the World's Largest Domino Chain",
-    description:
-      "10 million dominoes across 5 countries. Epic international collaboration with insane chain reactions.",
-    pledged: 45300,
+    contributions: 45300,
     deadline: "2025-10-01",
     following: true,
     videos: [
@@ -138,15 +137,14 @@ const mockIdeas: VideoIdea[] = [
         thumbnail: "",
         duration: "15:30",
         votes: 600,
+        likes: 294,
       },
     ],
   },
   {
     id: "5",
     title: "Teaching My Grandma to Become a Gamer",
-    description:
-      "From never touching a controller to competing in Fortnite tournaments. The ultimate gaming transformation.",
-    pledged: 8900,
+    contributions: 8900,
     deadline: "2025-09-25",
     following: false,
     videos: [],
@@ -154,9 +152,7 @@ const mockIdeas: VideoIdea[] = [
   {
     id: "6",
     title: "Recreating Every Movie Genre in 1 Day",
-    description:
-      "Horror, comedy, action, romance - can we film convincing scenes for every genre in just 24 hours?",
-    pledged: 19200,
+    contributions: 19200,
     deadline: "2025-09-18",
     following: true,
     videos: [
@@ -168,6 +164,7 @@ const mockIdeas: VideoIdea[] = [
         thumbnail: "",
         duration: "4:17",
         votes: 300,
+        likes: 2341,
       },
       {
         id: "9",
@@ -177,17 +174,18 @@ const mockIdeas: VideoIdea[] = [
         thumbnail: "",
         duration: "3:42",
         votes: 400,
+        likes: 8372,
       },
     ],
   },
 ];
 
 const BountyPage = () => {
-  const [ideas] = useState<VideoIdea[]>(mockIdeas);
-  const [selectedIdea, setSelectedIdea] = useState<VideoIdea | null>(null);
+  const [ideas] = useState<Bounty[]>(mockIdeas);
+  const [selectedIdea, setSelectedIdea] = useState<Bounty | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const handleInvest = (idea: VideoIdea) => {
+  const handleInvest = (idea: Bounty) => {
     setSelectedIdea(idea);
     setIsModalOpen(true);
   };
@@ -201,9 +199,20 @@ const BountyPage = () => {
     const daysLeft = Math.ceil(
       (new Date(deadline).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
     );
-
     return daysLeft < 0;
   }
+
+  useEffect(() => {
+    const getBounties = async () =>{ 
+      const res = await fetch("https://openvision-oq79.onrender.com", {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+      });
+      const data = await res.text(); // gives HTML
+      console.log(data);
+    }
+    getBounties();
+  }, [])
 
   return (
     <view className="video-ideas-page">
@@ -228,8 +237,7 @@ const BountyPage = () => {
               {isOver(idea.deadline) 
               ? <BountyCardOver
                   title={idea.title}
-                  description={idea.description}
-                  pledged={idea.pledged}
+                  pledged={idea.contributions}
                   deadline={idea.deadline}
                   videos={idea.videos}
                   modalClick={() => handleInvest(idea)}
@@ -237,8 +245,7 @@ const BountyPage = () => {
                 />
               : <BountyCard
                   title={idea.title}
-                  description={idea.description}
-                  pledged={idea.pledged}
+                  pledged={idea.contributions}
                   deadline={idea.deadline}
                   videos={idea.videos}
                   modalClick={() => handleInvest(idea)}
@@ -254,14 +261,13 @@ const BountyPage = () => {
         </view>
       </view>
 
-      {/* Investment Modal */}
+      {/* Modal */}
       {selectedIdea && (
         <BountyModal
           isOpen={isModalOpen}
           onClose={closeModal}
           challengeTitle={selectedIdea.title}
-          challengeDescription={selectedIdea.description}
-          currentPledged={selectedIdea.pledged}
+          currentPledged={selectedIdea.contributions}
           deadline={selectedIdea.deadline}
           videos={selectedIdea.videos}
         />

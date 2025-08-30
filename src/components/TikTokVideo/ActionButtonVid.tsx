@@ -4,20 +4,33 @@ import shareIcon from '../../assets/share.png';
 import commentIcon from '../../assets/comment.png';
 import heartIcon from '../../assets/heart.png';
 
-const ActionButtonsVid = () => {
+interface Video {
+  id: string;
+  title: string;
+  creator: string;
+  views: string;
+  thumbnail: string;
+  duration: string;
+  votes: number;
+  likes: number;
+}
+
+const ActionButtonsVid = ({video}: {video: Video}) => {
   const [liked, setLiked] = useState(false);
-  const [likeCount, setLikeCount] = useState(847);
+  const [likeCount, setLikeCount] = useState(video.likes);
 
   const handleLike = () => {
     setLiked(!liked);
     setLikeCount(prev => liked ? prev - 1 : prev + 1);
   };
+
+  const [isVoted, setIsVoted] = useState<boolean>(false);
+  const [voteCount, setVoteCount] = useState(video.votes);
   
   const handleVote = () => {
     setIsVoted(!isVoted)
-  }
 
-  const [isVoted, setIsVoted] = useState<boolean>(false);
+  }
 
   return (
     <>
