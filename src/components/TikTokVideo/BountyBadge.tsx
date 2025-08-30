@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router';
 interface Video {
   id: string;
   title: string;
-  creator: string;
+  creator_handle: string;
   views: string;
   thumbnail: string;
   duration: string;
@@ -17,8 +17,8 @@ const BountyBadge = ({video, toggleVideo}: {video: Video, toggleVideo: Dispatch<
   const nav = useNavigate();
 
   const handleGoBack = () => {
+    () => nav('/');
     toggleVideo(false);
-    () => nav('/bounty');
   }
 
     return (

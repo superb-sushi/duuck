@@ -8,7 +8,7 @@ import BountyBadge from './BountyBadge.js'
 interface Video {
   id: string;
   title: string;
-  creator: string;
+  creator_handle: string;
   views: string;
   thumbnail: string;
   duration: string;

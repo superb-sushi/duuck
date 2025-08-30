@@ -3,7 +3,7 @@ import liveStreamerImage from '../../assets/livestream.jpg';
 interface Video {
   id: string;
   title: string;
-  creator: string;
+  creator_handle: string;
   views: string;
   thumbnail: string;
   duration: string;

@@ -7,7 +7,7 @@ import BountyCardOver from "./BountyCardOver.js";
 interface Video {
   id: string;
   title: string;
-  creator: string;
+  creator_handle: string;
   views: string;
   thumbnail: string; //ignore this
   duration: string;
@@ -35,7 +35,7 @@ const mockIdeas: Bounty[] = [
       {
         id: "1",
         title: "Testing Zero G Water Drops",
-        creator: "spaceguy",
+        creator_handle: "spaceguy",
         views: "2.1M",
         thumbnail: "",
         duration: "0:45",
@@ -45,7 +45,7 @@ const mockIdeas: Bounty[] = [
       {
         id: "2",
         title: "Floating Pizza Challenge",
-        creator: "foodieflix",
+        creator_handle: "foodieflix",
         views: "1.8M",
         thumbnail: "",
         duration: "1:12",
@@ -64,7 +64,7 @@ const mockIdeas: Bounty[] = [
       {
         id: "3",
         title: "Making Candles from Scratch",
-        creator: "historymaker",
+        creator_handle: "historymaker",
         views: "950K",
         thumbnail: "",
         duration: "2:34",
@@ -83,7 +83,7 @@ const mockIdeas: Bounty[] = [
       {
         id: "4",
         title: "Gas Station Haul Part 1",
-        creator: "buyitall",
+        creator_handle: "buyitall",
         views: "3.2M",
         thumbnail: "",
         duration: "8:45",
@@ -93,7 +93,7 @@ const mockIdeas: Bounty[] = [
       {
         id: "5",
         title: "Weird Gas Station Finds",
-        creator: "buyitall",
+        creator_handle: "buyitall",
         views: "2.7M",
         thumbnail: "",
         duration: "6:23",
@@ -103,7 +103,7 @@ const mockIdeas: Bounty[] = [
       {
         id: "6",
         title: "Eating Only Gas Station Food",
-        creator: "hungryhank",
+        creator_handle: "hungryhank",
         views: "1.4M",
         thumbnail: "",
         duration: "12:01",
@@ -113,7 +113,7 @@ const mockIdeas: Bounty[] = [
       {
         id: "10",
         title: "Yosemite Gas Station Mukbang",
-        creator: "adventuretime101",
+        creator_handle: "adventuretime101",
         views: "11.1M",
         thumbnail: "",
         duration: "28:39",
@@ -132,7 +132,7 @@ const mockIdeas: Bounty[] = [
       {
         id: "7",
         title: "Domino Setup Day 1",
-        creator: "dominokid",
+        creator_handle: "dominokid",
         views: "1.2M",
         thumbnail: "",
         duration: "15:30",
@@ -159,7 +159,7 @@ const mockIdeas: Bounty[] = [
       {
         id: "8",
         title: "Horror Scene Behind the Scenes",
-        creator: "filmfanatic",
+        creator_handle: "filmfanatic",
         views: "890K",
         thumbnail: "",
         duration: "4:17",
@@ -169,7 +169,7 @@ const mockIdeas: Bounty[] = [
       {
         id: "9",
         title: "Action Sequence Fails",
-        creator: "filmfanatic",
+        creator_handle: "filmfanatic",
         views: "1.1M",
         thumbnail: "",
         duration: "3:42",
@@ -202,8 +202,6 @@ const BountyPage = () => {
     return daysLeft < 0;
   }
 
-  const [h, setH] = useState<string>("");
-
   useEffect(() => {
     const getBounties = async () =>{ 
       const res = await fetch("https://buuck.onrender.com/bounty", {
@@ -218,7 +216,6 @@ const BountyPage = () => {
 
   return (
     <view className="video-ideas-page">
-    <text style="color: white;">{h}</text>
       <view className="content">
         {/* Header */}
         <view className="header">
@@ -239,6 +236,7 @@ const BountyPage = () => {
             >
               {isOver(idea.judging_end) 
               ? <BountyCardOver
+                  id={idea.id}
                   title={idea.description}
                   pledged={idea.prize_pool}
                   deadline={idea.judging_end}
@@ -247,6 +245,7 @@ const BountyPage = () => {
                   following={idea.following}
                 />
               : <BountyCard
+                  id={idea.id}
                   title={idea.description}
                   pledged={idea.prize_pool}
                   deadline={idea.judging_end}
@@ -273,6 +272,7 @@ const BountyPage = () => {
           currentPledged={selectedIdea.prize_pool}
           deadline={selectedIdea.judging_end}
           videos={selectedIdea.current_videos}
+          id={selectedIdea.id}
         />
       )}
     </view>

@@ -2,11 +2,21 @@ import { useState } from "react";
 import CloseIcon from "../../assets/close.png";
 import "./styles/BountyModal.css";
 import VideoPage from "../TikTokVideo/Video.js"
+import { useEffect } from "@lynx-js/react";
+
+interface User {
+  handle: string,
+  wallet: number,
+  total_donations: number,
+  time_spent_on_app: number,
+  account_age_days: number,
+  total_interactions: number
+}
 
 interface Video {
   id: string;
   title: string;
-  creator: string;
+  creator_handle: string;
   views: string;
   thumbnail: string;
   duration: string;
@@ -21,6 +31,7 @@ interface InvestmentModalProps {
   currentPledged: number;
   deadline: string;
   videos: Video[];
+  id: string;
 }
 
 const BountyModal = ({
@@ -29,22 +40,38 @@ const BountyModal = ({
   challengeTitle,
   currentPledged,
   deadline,
-  videos
+  videos,
+  id
 }: InvestmentModalProps) => {
-  const [creatorName, setCreatorName] = useState("");
   const [activeTab, setActiveTab] = useState<"contribute" | "join" | "videos">("contribute");
   const [investmentAmount, setInvestmentAmount] = useState<number>(0);
+
+  const [currPool, setCurrPool] = useState<number>(currentPledged)
 
   const [isVideoOn, setIsVideoOn] = useState<boolean>(false);
   const [focusedVideo, setFocusedVideo] = useState<Video>();
 
   const[modalIsOpen, setModalIsOpen] = useState<boolean>(isOpen);
 
+  const [creator, setCreator] = useState<User>();
+
   const handleGoVideo = (v: Video) => {
     setIsVideoOn(true);
     setFocusedVideo(v);
     setModalIsOpen(false);
   }
+
+  useEffect(() => {
+    const getCreator = async () =>{ 
+      const res = await fetch("https://buuck.onrender.com/user/getdefault", {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+      });
+      const data = await res.json();
+      setCreator(data);
+    }
+    getCreator();
+  }, [])
 
   if (!isOpen) return null;
 
@@ -54,23 +81,33 @@ const BountyModal = ({
 
   const isOver = daysLeft < 0;
 
+  const [warning, setWarning] = useState<string>("");
+  const [joinMsg, setJoinMsg] = useState<string>("");
+  const [joined, setJoined] = useState<boolean>(false);
+  const [invested, setInvested] = useState<boolean>(false);
+
   const handleInvest = () => {
-    if (!investmentAmount || parseFloat(investmentAmount.toString()) <= 0) {
-      alert("⚠️ Please enter a valid investment amount.");
+    if (!investmentAmount || parseFloat(investmentAmount.toString()) <= 0 || investmentAmount > creator!.wallet) {
+      setWarning("⚠️ Please enter a valid investment amount.");
       return;
     }
-    alert(`🚀 Investment Successful! You've invested $${investmentAmount} in "${challengeTitle}"`);
-    onClose();
+    setCreator(prev => ({...prev!, wallet: prev!.wallet - investmentAmount}));
+    setWarning(`🚀 Investment Successful! You've invested $${investmentAmount}!`);
+    setInvested(true);
+    setCurrPool(currPool + investmentAmount);
+    const updatePrizePool = async () =>{ 
+      const res = await fetch(`https://buuck.onrender.com/bounty/${id}/contribute?viewer_handle=${creator!.handle}&amount=${investmentAmount}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+      });
+    }
+    updatePrizePool();
+    setInvestmentAmount(0);
   };
 
   const handleJoinChallenge = () => {
-    if (!creatorName.trim()) {
-      alert("⚠️ Please enter your creator name.");
-      return;
-    }
-    alert(`🎬 Welcome! @${creatorName} joined "${challengeTitle}"`);
-    setCreatorName("");
-    onClose();
+    setJoinMsg(`🎬 Welcome! @${creator!.handle} joined "${challengeTitle}"`);
+    setJoined(true);
   };
 
   return (
@@ -88,7 +125,7 @@ const BountyModal = ({
 
           <view className="challenge-stats">
             <view>
-              <text className="challenge-stats-text">💰 ${currentPledged.toLocaleString()} raised!</text>
+              <text className="challenge-stats-text">💰 ${currPool.toFixed(2)} raised!</text>
             </view>
             <view>
               📅 <text className={daysLeft <= 3 ? "urgent" : "not-urgent"}>{daysLeft < 0 ? "challenge over!": daysLeft + "d left!"}</text>
@@ -116,7 +153,7 @@ const BountyModal = ({
                     </view>
                     <view style='display: flex; flex-direction: column; gap: 0.2rem; justify-content: center; flex-grow: 1; margin-left: 10px;'>
                       <text style={'color: white; font-weight: 900'}>{video.title}</text>
-                      <text style={'color: white'}>@{video.creator} • {video.views} views • {video.votes} votes</text>
+                      <text style={'color: white'}>@{video.creator_handle} • {video.views} views • {video.votes} votes</text>
                     </view>
                     <text className="video-info">{video.duration}</text>
                   </view>
@@ -150,7 +187,10 @@ const BountyModal = ({
         {/* Tab Content */}
         {activeTab === "contribute" && (
           <view className="tab-panel">
-            <text className="invest-header">Contribute Amount</text>
+            <view style={'display: flex; justify-content: space-between'}>
+              <text className="invest-header">Contribute Amount</text>
+              {creator && <text style="color: #a1a1a1;">You have ${creator!.wallet.toFixed(2)}!</text>}
+            </view>
             <view className="input-wrapper">
               <text style={'color: white'}>$ </text>
               <view className="modal-input-box">
@@ -159,6 +199,8 @@ const BountyModal = ({
                 </text>
               </view>
             </view>
+
+            <text style={invested ? 'color: green;': 'color: red;'}>{warning}</text>
 
             <view className="quick-amounts">
               {[-0.10, -1, -10, 0.10, 1, 10].map((amt) => (
@@ -182,7 +224,7 @@ const BountyModal = ({
             <view className="input-wrapper">
               <text style="color: #d1d1d1">@  </text>
               <view className="modal-input-box">
-                <text style="color: #a1a1a1;">{'cafemonster'}</text>
+                <text style="color: #a1a1a1;">{creator!.handle}</text>
               </view>
             </view>
             <text className="helper-text">
@@ -190,11 +232,13 @@ const BountyModal = ({
             </text>
 
             <view style={'width: 100%; display: flex; justify-content: center; margin-top: 20px;'}>
-              <view className="neon-button" bindtap={handleJoinChallenge}>
+              <view className={joined ? "opacity: 25%; neon-button " : "neon-button "} bindtap={handleJoinChallenge}>
                 <text style={'color: white; font-weight: 900;'}>Join Now</text>
               </view>
             </view>
+            <text style={joined ? 'color: green; margin-top: 0.75rem': 'color: red; margin-top: 0.75rem'}>{joinMsg}</text>
           </view>
+          
         )}
 
         {activeTab === "videos" && (
@@ -211,7 +255,7 @@ const BountyModal = ({
                     </view>
                     <view style='display: flex; flex-direction: column; gap: 0.2rem; justify-content: center; flex-grow: 1; margin-left: 10px;'>
                       <text style={'color: white; font-weight: 900'}>{video.title}</text>
-                      <text style={'color: white'}>@{video.creator} • {video.views} views • {video.votes} votes</text>
+                      <text style={'color: white'}>@{video.creator_handle} • {video.views} views • {video.votes} votes</text>
                     </view>
                     <text className="video-info">{video.duration}</text>
                   </view>

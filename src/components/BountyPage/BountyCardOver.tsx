@@ -5,7 +5,7 @@ import "./styles/BountyCardOver.css";
 interface Video {
   id: string;
   title: string;
-  creator: string;
+  creator_handle: string;
   views: string;
   thumbnail: string;
   duration: string;
@@ -21,6 +21,7 @@ interface IdeaCardProps {
   className?: string;
   modalClick?: () => void;
   following: boolean;
+  id: string,
 }
 
 const BountyCardOver = ({
@@ -31,6 +32,7 @@ const BountyCardOver = ({
   className = "",
   following,
   modalClick,
+  id
 }: IdeaCardProps) => {
 
   return (

@@ -6,7 +6,7 @@ import heartIcon from '../../assets/heart.png';
 interface Video {
   id: string;
   title: string;
-  creator: string;
+  creator_handle: string;
   views: string;
   thumbnail: string;
   duration: string;
@@ -22,6 +22,7 @@ interface IdeaCardProps {
   className?: string;
   modalClick?: () => void;
   following: boolean;
+  id: string;
 }
 
 const BountyCard = ({
@@ -32,6 +33,7 @@ const BountyCard = ({
   className = "",
   following,
   modalClick,
+  id,
 }: IdeaCardProps) => {
   const daysLeft = Math.ceil(
     (new Date(deadline).getTime() - new Date().getTime()) /

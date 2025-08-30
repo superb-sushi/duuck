@@ -1,7 +1,9 @@
+import { useNavigate } from "react-router";
+
 interface Video {
   id: string;
   title: string;
-  creator: string;
+  creator_handle: string;
   views: string;
   thumbnail: string;
   duration: string;
@@ -10,10 +12,13 @@ interface Video {
 }
 
 export const UserProfile = ({video}: {video: Video}) => {
+
+  const nav = useNavigate();
+
   return (
     <view className="user-profile">
       {/* User Avatar */}
-      <view className="avatar-wrapper">
+      <view className="avatar-wrapper" bindtap={() => nav('/')}>
         <view className="avatar-border">
           <view className="avatar">
             <text className="avatar-text">A</text>
@@ -24,7 +29,7 @@ export const UserProfile = ({video}: {video: Video}) => {
       
       {/* User Info */}
       <view className="user-info">
-        <text className="username">{video.creator}</text>
+        <text className="username">{video.creator_handle}</text>
         <text className="user-bio">Its makan time! 🎉</text>
       </view>
       
