@@ -1,19 +1,14 @@
-import hashlib
+import joblib
 from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 from datetime import datetime
 from .db import Base, engine, get_db
 from . import models, schemas
-from .ledger import post as ledger_post
-from .risk import viewer_ok, creator_reserve_pct
-from engine.fae import allocate
-from engine.merkle import merkle_root, merkle_proofs, verify_proof
-import joblib
 from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
 from .models import Bounty, BountyContribution, BountySubmission, BountyVote, User, BountyFollow
-from .schemas import BountyCreate, BountyOut,UserOut, UserCreate
+from .schemas import BountyCreate, BountyOut, UserCreate
 from .ideaModeration import find_similar_idea,moderate_idea
 
 Base.metadata.create_all(bind=engine)
@@ -28,56 +23,36 @@ async def lifespan(app: FastAPI):
     """
     with Session(engine) as db:
         try:
-            # Example: Add initial viewers
-            if not db.query(models.Viewer).first():
-                viewers = [
-                    models.Viewer(handle="viewer1", kyc_level="basic", device_attested=True),
-                    models.Viewer(handle="viewer2", kyc_level="basic", device_attested=True),
+            # Example: Add initial users
+            if not db.query(models.User).first():
+                users = [
+                    models.User(handle="user1", wallet=100.0, total_donations=10.0, time_spent_on_app=120, account_age_days=365, total_interactions=50),
+                    models.User(handle="user2", wallet=200.0, total_donations=20.0, time_spent_on_app=240, account_age_days=730, total_interactions=100),
+                    models.User(handle="user3", wallet=300.0, total_donations=30.0, time_spent_on_app=360, account_age_days=1095, total_interactions=150),
+                    models.User(handle="user4", wallet=400.0, total_donations=40.0, time_spent_on_app=480, account_age_days=1460, total_interactions=200),
+                    models.User(handle="user5", wallet=500.0, total_donations=50.0, time_spent_on_app=600, account_age_days=1825, total_interactions=250),
+                    models.User(handle="user6", wallet=600.0, total_donations=60.0, time_spent_on_app=720, account_age_days=2190, total_interactions=300),
                 ]
-                db.add_all(viewers)
-
-            # Example: Add initial creators
-            if not db.query(models.Creator).first():
-                creators = [
-                    models.Creator(handle="creator1", risk_tier="low", reserve_pct=0.1),
-                    models.Creator(handle="creator2", risk_tier="medium", reserve_pct=0.2),
-                ]
-                db.add_all(creators)
+                db.add_all(users)
 
             # Example: Add initial videos
             if not db.query(models.Video).first():
                 videos = [
-                    models.Video(creator_handle="creator1", title="Video 1", phash="hash1"),
-                    models.Video(creator_handle="creator2", title="Video 2", phash="hash2"),
+                    models.Video(creator_handle="user1", title="Video 1", phash="hash1"),
+                    models.Video(creator_handle="user2", title="Video 2", phash="hash2"),
+                    models.Video(creator_handle="user3", title="Video 3", phash="hash3"),
+                    models.Video(creator_handle="user4", title="Video 4", phash="hash4"),
+                    models.Video(creator_handle="user1", title="Video 5", phash="hash5"),
                 ]
                 db.add_all(videos)
 
             # Example: Add initial bounties
             if not db.query(models.Bounty).first():
                 bounties = [
-                    models.Bounty(title="Bounty 1", description="Solve problem 1", user_creator_handle="viewer1", total_donations=50),
-                    models.Bounty(title="Bounty 2", description="Solve problem 2", user_creator_handle="viewer2", total_donations=100),
+                    models.Bounty(description="Solve problem 1", creator_handle="user5", prize_pool=50.0, cutoff_date=datetime(2025, 8, 21), judging_start=datetime(2025, 8, 22), judging_end=datetime(2025, 8, 29), is_closed=True),
+                    models.Bounty(description="Solve problem 2", creator_handle="user6", prize_pool=100.0, cutoff_date=datetime(2025, 9, 2), judging_start=datetime(2025, 9, 3), judging_end=datetime(2025, 9, 7), is_closed=False),
                 ]
                 db.add_all(bounties)
-
-            # Example: Add initial sessions and session events
-            if not db.query(models.Session).first():
-                session = models.Session(viewer_handle="viewer1")
-                db.add(session)
-                db.commit()
-                db.refresh(session)
-
-                session_event = models.SessionEvent(
-                    session_id=session.id,
-                    video_id=1,
-                    viewer_handle="viewer1",
-                    seconds_watched=120,
-                    interactions=5,
-                    donation_amount=10,
-                    target=0,
-                    status="approved"
-                )
-                db.add(session_event)
 
             db.commit()
         except SQLAlchemyError as e:
@@ -89,12 +64,9 @@ async def lifespan(app: FastAPI):
     with Session(engine) as db:
         try:
             # Example cleanup: Remove test data (if needed)
-            db.query(models.SessionEvent).delete()
-            db.query(models.Session).delete()
             db.query(models.Bounty).delete()
             db.query(models.Video).delete()
-            db.query(models.Creator).delete()
-            db.query(models.Viewer).delete()
+            db.query(models.User).delete()
             db.commit()
         except SQLAlchemyError as e:
             print(f"Error during cleanup: {e}")
@@ -109,14 +81,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.post("/user/create", response_model=UserOut)
-def create_user(user: UserCreate, db: Session = Depends(get_db)):
+@app.post("/user/create")
+def create_user(user_handle: str, db: Session = Depends(get_db)):
     new_user = User(
-        weekly_budget=user.weekly_budget,
-        kyc_level=user.kyc_level,
-        device_attested=user.device_attested,
-        risk_tier=user.risk_tier,
-        reserve_pct=user.reserve_pct
+        user_handle=user_handle,
     )
     db.add(new_user)
     db.commit()
@@ -132,8 +100,6 @@ def create_video(v: schemas.VideoCreate, db: Session = Depends(get_db)):
 
 @app.post("/session/start")
 def session_start(s: schemas.SessionStart, db: Session = Depends(get_db)):
-    if not viewer_ok(db, s.viewer_handle):
-        return {"error": "viewer not allowed"}
     ses = models.Session(viewer_handle=s.viewer_handle)
     db.add(ses); db.commit(); db.refresh(ses)
     return {"session_id": ses.id}
@@ -175,38 +141,16 @@ def session_event(ev: schemas.SessionEventIn, db: Session = Depends(get_db)):
 @app.post("/session/close")
 def session_close(session_id: int, platform_match_pool: float = 0.5, db: Session = Depends(get_db)):
     ses = db.get(models.Session, session_id)
-    ses.ended_at = datetime.utcnow(); db.commit()
-    viewer = db.get(models.Viewer, ses.viewer_handle)
-    events = db.query(models.SessionEvent).filter_by(session_id=session_id).all()
-    evt_payload = []
-    for e in events:
-        vid = db.get(models.Video, e.video_id)
-        evt_payload.append({
-            "video_id": vid.id,
-            "creator_id": vid.creator_id,
-            "donation_amount": e.donation_amount,
-        })
-    allocs = allocate(evt_payload, platform_match_pool=platform_match_pool, K=25)
-    breakdown = []
-    total = 0.0
-    for a in allocs:
-        amount = round(a["amount"], 2)
-        total += amount
-        resv = creator_reserve_pct(db, a["creator_handle"]) * amount
-        # ledger: move from escrow to creator payable (with reserve to platform_pool for safety)
-        ledger_post(db, account="escrow", debit=0.0, credit=amount, ref_type="allocation", ref_id=session_id)
-        ledger_post(db, account="creator_payable", debit=amount - resv, credit=0.0, ref_type="allocation", ref_id=session_id)
-        ledger_post(db, account="platform_pool", debit=resv, credit=0.0, ref_type="reserve", ref_id=session_id)
-        db.add(models.Allocation(session_id=session_id, creator_handle=a["creator_handle"], weight=a["weight"], amount=amount, components=a["components"]))
-        breakdown.append({
-            "creator_id": a["creator_id"],
-            "video_id": a["video_id"],
-            "amount": amount,
-            "weight": round(a["weight"], 4),
-            "explain": a["components"],
-        })
-    db.commit()
-    return {"session_id": session_id, "breakdown": breakdown, "total_spent": round(total, 2)}
+    ses.ended_at = datetime.now(); db.commit()
+    return {"session_id": session_id}
+
+@app.get("/bounty")
+def get_top_bounties(db: Session = Depends(get_db)):
+    """
+    Endpoint to fetch top bounty ideas.
+    """
+    bounties = db.query(models.Bounty).all()  # Default sorting by donations assumed
+    return bounties
 
 @app.post("/bounty/create", response_model=BountyOut)
 def create_bounty(bounty: BountyCreate, db: Session = Depends(get_db)):
@@ -261,7 +205,7 @@ def contribute_bounty(bounty_id: int, viewer_id: int, amount: float, db: Session
 @app.post("/bounty/{bounty_id}/submit")
 def submit_bounty(bounty_id: int, creator_id: int, video_id: int, db: Session = Depends(get_db)):
     bounty = db.get(Bounty, bounty_id)
-    if not bounty or bounty.is_closed or datetime.utcnow() > bounty.cutoff_date:
+    if not bounty or bounty.is_closed or datetime.now() > bounty.cutoff_date:
         raise HTTPException(status_code=400, detail="Bounty closed or cutoff passed")
     
     # Condition 1: User who created the bounty cannot submit
@@ -281,7 +225,7 @@ def submit_bounty(bounty_id: int, creator_id: int, video_id: int, db: Session = 
 @app.post("/bounty/{bounty_id}/vote")
 def vote_bounty(bounty_id: int, submission_id: int, viewer_id: int, db: Session = Depends(get_db)):
     bounty = db.get(Bounty, bounty_id)
-    # if not bounty or not (bounty.judging_start <= datetime.utcnow() <= bounty.judging_end):
+    # if not bounty or not (bounty.judging_start <= datetime.now() <= bounty.judging_end):
     #     raise HTTPException(status_code=400, detail="Not in judging period")
    
     # Check if viewer has submitted to this bounty
@@ -302,7 +246,7 @@ def vote_bounty(bounty_id: int, submission_id: int, viewer_id: int, db: Session 
 @app.post("/bounty/{bounty_id}/distribute")
 def distribute_bounty(bounty_id: int, db: Session = Depends(get_db)):
     bounty = db.get(Bounty, bounty_id)
-    if not bounty or datetime.utcnow() < bounty.judging_end or bounty.is_closed:
+    if not bounty or datetime.now() < bounty.judging_end or bounty.is_closed:
         raise HTTPException(status_code=400, detail="Judging not finished or bounty already closed")
     # Count votes per submission
     votes = db.query(BountyVote.submission_id).filter(BountyVote.bounty_id == bounty_id).all()

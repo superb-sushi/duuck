@@ -8,7 +8,7 @@ bounty_creators = Table(
     "bounty_creators",
     Base.metadata,
     Column("bounty_id", Integer, ForeignKey("bounties.id"), primary_key=True),
-    Column("creator_handle", String, ForeignKey("creators.handle"), primary_key=True)  # Changed from viewer_handle to creator_handle
+    Column("creator_handle", String, ForeignKey("users.handle"), primary_key=True)  # Changed from viewer_handle to creator_handle
 )
 
 class User(Base):
@@ -23,7 +23,7 @@ class User(Base):
 class Video(Base):
     __tablename__ = "videos"
     id = Column(Integer, primary_key=True)
-    creator_id = Column(Integer, ForeignKey("users.id"))
+    creator_handle = Column(String, ForeignKey("users.handle"))
     title = Column(String)
     phash = Column(String, nullable=True)  # mock perceptual hash
     creator = relationship("User")
@@ -52,7 +52,7 @@ class Bounty(Base):
     __tablename__ = "bounties"
     id = Column(Integer, primary_key=True)
     description = Column(String)
-    creator_id = Column(Integer, ForeignKey("users.id"))  # who created the bounty
+    creator_handle = Column(String, ForeignKey("users.handle"))  # Updated from creator_id
     prize_pool = Column(Float, default=0.0)
     cutoff_date = Column(DateTime)
     judging_start = Column(DateTime)
@@ -63,14 +63,14 @@ class BountyContribution(Base):
     __tablename__ = "bounty_contributions"
     id = Column(Integer, primary_key=True)
     bounty_id = Column(Integer, ForeignKey("bounties.id"))
-    viewer_id = Column(Integer, ForeignKey("users.id"))
+    viewer_handle = Column(String, ForeignKey("users.handle"))  # Updated from viewer_id
     amount = Column(Float)
 
 class BountySubmission(Base):
     __tablename__ = "bounty_submissions"
     id = Column(Integer, primary_key=True)
     bounty_id = Column(Integer, ForeignKey("bounties.id"))
-    creator_id = Column(Integer, ForeignKey("users.id"))
+    creator_handle = Column(String, ForeignKey("users.handle"))  # Updated from creator_id
     video_id = Column(Integer, ForeignKey("videos.id"))
     submitted_at = Column(DateTime, default=datetime.utcnow)
 
@@ -79,10 +79,10 @@ class BountyVote(Base):
     id = Column(Integer, primary_key=True)
     bounty_id = Column(Integer, ForeignKey("bounties.id"))
     submission_id = Column(Integer, ForeignKey("bounty_submissions.id"))
-    viewer_id = Column(Integer, ForeignKey("users.id"))
+    viewer_handle = Column(String, ForeignKey("users.handle"))  # Updated from viewer_id
 
 class BountyFollow(Base):
     __tablename__ = "bounty_follows"
     id = Column(Integer, primary_key=True)
     bounty_id = Column(Integer, ForeignKey("bounties.id"))
-    user_id = Column(Integer, ForeignKey("users.id"))
+    user_handle = Column(String, ForeignKey("users.handle"))  # Updated from user_id
