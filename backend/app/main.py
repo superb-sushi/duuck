@@ -12,6 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from .models import Bounty, BountyContribution, BountySubmission, BountyVote, User, BountyFollow
 from .schemas import BountyCreate, BountyOut, UserCreate
 from .ideaModeration import find_similar_idea,moderate_idea
+from collections import Counter
 
 
 # Delete and recreate the database file at startup
@@ -422,20 +423,30 @@ def distribute_bounty(bounty_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail="Judging not finished or bounty already closed")
     # Count votes per submission
     votes = db.query(BountyVote.submission_id).filter(BountyVote.bounty_id == bounty_id).all()
-    from collections import Counter
     vote_counts = Counter([v[0] for v in votes])
     top_submissions = [sid for sid, _ in vote_counts.most_common(3)]
-    # Split prize pool: 50%, 30%, 20%
-    # TODO Kaiwen's FAE
     splits = [0.5, 0.3, 0.2]
+    winners = []
     for i, sid in enumerate(top_submissions):
         submission = db.get(BountySubmission, sid)
         if submission:
-            # Here you would credit the creator (e.g., via ledger)
-            pass
+            prize = round(bounty.prize_pool * splits[i], 2) if i < len(splits) else 0.0
+            # Add prize to winner's weekly_budget
+            winner = db.get(User, submission.creator_id)
+            if winner:
+                winner.wallet += prize
+            winners.append({
+                "submission_id": sid,
+                "creator_handle": submission.creator_handle,
+                "video_id": submission.video_id,
+                "prize": prize
+            })
     bounty.is_closed = True
     db.commit()
-    return {"success": True, "top_submissions": top_submissions}
+    return {
+        "success": True,
+        "winners": winners
+    }
 
 @app.get("/bounty/{bounty_id}", response_model=BountyOut)
 def view_bounty(bounty_id: int, db: Session = Depends(get_db)):
