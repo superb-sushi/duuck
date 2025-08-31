@@ -398,8 +398,8 @@ def submit_bounty(bounty_id: int, creator_handle: str, video_id: int, db: Sessio
 @app.post("/bounty/{bounty_id}/vote")
 def vote_bounty(bounty_id: int, submission_id: int, viewer_handle: str, db: Session = Depends(get_db)):
     bounty = db.get(Bounty, bounty_id)
-    # if not bounty or not (bounty.judging_start <= datetime.now() <= bounty.judging_end):
-    #     raise HTTPException(status_code=400, detail="Not in judging period")
+    if not bounty or not (bounty.judging_start <= datetime.now() <= bounty.judging_end):
+        raise HTTPException(status_code=400, detail="Not in judging period")
    
     # Check if viewer has submitted to this bounty
     user_submission = db.query(BountySubmission).filter_by(bounty_id=bounty_id, creator_handle=viewer_handle).first()
@@ -470,7 +470,6 @@ def view_bounty_winners(bounty_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail="Bounty not finished or winners not decided yet")
     # Count votes per submission
     votes = db.query(BountyVote.submission_id).filter(BountyVote.bounty_id == bounty_id).all()
-    from collections import Counter
     vote_counts = Counter([v[0] for v in votes])
     top_submissions = [sid for sid, _ in vote_counts.most_common(3)]
     splits = [0.5, 0.3, 0.2]
