@@ -113,3 +113,5 @@ npm run dev
 Scan the QRCode in the terminal with your LynxExplorer App (preferably Android) to see the result.
 Click on `Navigate to Bounty Screen` to interact with the relevant portion of the App.
 
+Note: The backend that the app actually interacts with is a hosted copy of the backend files in the repository.
+
