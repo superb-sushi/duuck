@@ -1,3 +1,21 @@
+<<<<<<< HEAD
+# Local
+.DS_Store
+*.local
+*.log*
+
+# Dist
+node_modules
+dist/
+
+# IDE
+.vscode/*
+!.vscode/extensions.json
+.idea
+
+# Python
+/backend/.venv
+=======
 # Python
 *.pyc
 *.pyo
@@ -23,3 +41,4 @@ Thumbs.db
 # Build
 build/
 dist/
+>>>>>>> 9b4395d28ee7a19e1f5eb93fb2d95a578d4d905f

@@ -1,0 +1,68 @@
+### To Create User
+POST http://127.0.0.1:8000/user/create
+Content-Type: application/json
+
+{
+  "weekly_budget": 100.0,
+  "kyc_level": "basic",
+  "device_attested": true,
+  "risk_tier": "low",
+  "reserve_pct": 0.1
+}
+### To Create Bounty
+POST http://127.0.0.1:8000/bounty/create
+Content-Type: application/json
+
+{
+  "creator_id": 5,
+  "description": "Descend Mount Fuji",
+  "cutoff_date": "2025-10-31T23:59:59",
+  "judging_start": "2025-11-01T00:00:00",
+  "judging_end": "2025-11-07T23:59:59",
+  "prize_pool": 500.0
+}
+### To view Bounty details
+GET http://127.0.0.1:8000/bounty/5
+### To contribute to a bounty
+POST http://127.0.0.1:8000/bounty/5/contribute?viewer_id=5&amount=990.0
+### To create a video
+POST http://127.0.0.1:8000/video/create
+Content-Type: application/json
+
+{
+  "creator_id": 5,
+  "title": "Climbing Mount Fuji",
+  "description": "This is a test video.",
+  "url": "http://example.com/video.mp4"
+}
+### To submit a bounty submission
+POST http://127.0.0.1:8000/bounty/5/submit?creator_id=5&video_id=1
+Content-Type: application/json
+
+{
+  "description": "My submission for climbing Mount Fuji."
+}
+### To vote for submission
+POST http://127.0.0.1:8000/bounty/9/vote?creator_id=5&video_id=1&submission_id=1&viewer_id=5
+Content-Type: application/json
+
+{
+  "vote": "up"
+}
+### Follow bounty
+POST http://127.0.0.1:8000/bounty/9/follow?user_id=3
+Content-Type: application/json
+
+
+### Demo content moderation API
+POST http://127.0.0.1:8000/bounty/create
+Content-Type: application/json
+
+{
+  "creator_id": 5,
+  "description": "Kill Trump",
+  "cutoff_date": "2025-10-31T23:59:59",
+  "judging_start": "2025-11-01T00:00:00",
+  "judging_end": "2025-11-07T23:59:59",
+  "prize_pool": 500.0
+}

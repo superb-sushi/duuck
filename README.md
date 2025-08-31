@@ -8,7 +8,7 @@
 
 ```bash
 cd backend
-python -m venv .venv && .venv\\Scripts\\activate
+python -m venv .venv && .venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
@@ -20,18 +20,23 @@ cd backend
 uvicorn app.main:app --reload
 ```
 
-### Frontend (React web fallback; Lynx code skeleton below)
+## Rspeedy project (frontend)
 
-#### Frontend Initial Setup (Run Once)
+This is a ReactLynx project bootstrapped with `create-rspeedy`.
+
+## Getting Started
+
+First, install the dependencies:
 
 ```bash
-cd frontend-web
-npm i
+npm install
 ```
 
-#### Start the Frontend Server
+Then, run the development server:
 
 ```bash
-cd frontend-web
 npm run dev
 ```
+
+Scan the QRCode in the terminal with your LynxExplorer App to see the result.
+Click on `Navigate to Bounty Screen` to interact with the relevant portion of the App.

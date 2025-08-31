@@ -1,0 +1,628 @@
+:root {
+  background-color: #ffffff;
+  --color-text: #fff;
+}
+
+.centralise {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  gap: 1%;
+}
+
+.underline {
+  text-decoration: underline;
+  color: white;
+  background-color: #1c1c1c;
+  padding: 2% 4% 2% 4%;
+  border-radius: 25px;
+}
+
+.app-screen {
+  height: 100vh;
+  width: 100vw;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  z-index: auto;
+}
+
+.live-header-container {
+  position: fixed;
+  left: 1rem;
+  width: 100vw;
+  top: 0px;
+  background-color: pink;
+}
+
+.user-profile {
+  background-color: rgba(0, 0, 0, 0.5);
+  border-radius: 50px;
+  padding: 1% 2% 1% 2%;
+  position: fixed;
+  width: 40vw;
+  bottom: 6rem; 
+  left: 1rem; 
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem; 
+}
+
+/* Avatar */
+.avatar-wrapper {
+  position: relative;
+}
+
+.avatar-border {
+  width: 3rem; 
+  height: 3rem;
+  border-radius: 9999px; 
+  background: linear-gradient(45deg, #25f4ee, #fe2c55);
+  padding: 0.125rem; 
+}
+
+.avatar {
+  width: 100%;
+  height: 100%;
+  border-radius: 9999px;
+  background-color: #1c1c1c; 
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.avatar-text {
+  color: white;
+  font-weight: bold;
+  font-size: 1.125rem; 
+}
+
+/* Status Badge */
+.status-badge {
+  position: absolute;
+  bottom: -0.25rem; 
+  right: -0.25rem; 
+  width: 1.25rem; 
+  height: 1.25rem; 
+  background-color: #fe2c55; 
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* User Info */
+.user-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.username {
+  color: white;
+  font-weight: bold;
+  font-size: 1.125rem; 
+}
+
+.user-bio {
+  color: #D1D1D1; 
+  font-size: 0.875rem; 
+}
+
+/* Follow Button */
+.follow-btn {
+  margin-left: auto;
+  background-color: #fe2c55; 
+  padding: 0.5rem 1rem; 
+  border-radius: 9999px;
+  transition: background-color 0.2s ease;
+  cursor: pointer;
+}
+
+.follow-btn:hover {
+  background-color: rgba(254, 44, 85, 0.9); 
+}
+
+.follow-text {
+  color: white;
+  font-weight: bold;
+  font-size: 0.875rem; 
+}
+
+.action-buttons {
+  position: absolute;
+  right: 1rem;   
+  bottom: 8rem;  
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;     
+}
+
+.btn-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.btn-circle {
+  width: 3rem; 
+  height: 3rem;   
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.icon {
+  width: 1.5rem;
+  height: 1.5rem;
+  color: white;
+}
+
+/* Labels under buttons */
+.btn-label {
+  color: white;
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
+  font-weight: 500;  
+}
+
+/* Like button states */
+.like-btn {
+  background-color: rgba(0, 0, 0, 0.5);
+}
+.like-btn:hover {
+  background-color: rgba(0, 0, 0, 0.7);
+}
+.like-btn.liked {
+  background-color: #fe2c55;
+  box-shadow: 0 0 10px rgba(254, 44, 85, 0.7); 
+}
+
+/* Translucent buttons (comment/share) */
+.translucent-btn {
+  background-color: rgba(0, 0, 0, 0.5);
+  transition: background-color 0.2s ease;
+}
+.translucent-btn:hover {
+  background-color: rgba(0, 0, 0, 0.7);
+}
+
+/* Gift button */
+.gift-btn {
+  background: linear-gradient(45deg, #25f4ee, #fe2c55); 
+  box-shadow: 0 0 10px rgba(254, 44, 85, 0.7);
+  animation: float 3s ease-in-out infinite;
+}
+
+/*Challenge Button */
+.trophy-btn {
+  background: linear-gradient(45deg, #fe2c55, #25f4ee); 
+  box-shadow: 0 0 10px rgba(254, 44, 85, 0.7);
+  animation: float 3s ease-in-out infinite;
+}
+
+/*Vote button */
+.vote-btn {
+  background: linear-gradient(135deg, #25f4ee, #fe2c55); 
+  box-shadow: 0 0 10px rgba(254, 44, 85, 0.7);
+  animation: float 2s ease-in-out infinite;
+}
+
+.action-icon {
+  width: 70%;
+  height: 70%;
+}
+
+/* Floating animation */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+.live-container {
+  position: fixed;
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+  background-color: #0d0d0d; 
+}
+
+/* Background */
+.background {
+  position: absolute;
+}
+
+.background-image {
+  width: 100vw;
+  height: 100vh;
+}
+
+.background-overlay {
+  position: absolute;
+  background: linear-gradient(to top, rgba(0,0,0,0.6), rgba(0,0,0,0));
+}
+
+/* Live Badge */
+.live-badge {
+  position: absolute;
+  top: 1.5rem;  
+  left: 1rem;   
+  z-index: 20;
+}
+
+.badge-content {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: #fe2c55; 
+  padding: 0.375rem 0.75rem; 
+  border-radius: 9999px;
+  animation: pulseGlow 1.5s infinite;
+}
+
+.bounty-badge-content {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem; 
+  background: linear-gradient(135deg, #20CFC7 0%, #FF335F 100%);
+  padding: 0.375rem 0.75rem; 
+  border-radius: 9999px;
+  animation: pulseGlow 1.5s infinite;
+}
+
+.pulse-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  background: white;
+  border-radius: 50%;
+  animation: pulse 1.5s infinite;
+}
+
+.badge-text {
+  color: white;
+  font-weight: bold;
+  font-size: 0.875rem; /* text-sm */
+}
+
+/* Viewer Count */
+.viewer-count {
+  position: absolute;
+  top: 1.5rem;
+  left: 6rem; /* left-24 */
+  z-index: 20;
+}
+
+.viewer-box {
+  background-color: rgba(0, 0, 0, 0.5);
+  padding: 0.375rem 0.75rem;
+  border-radius: 9999px;
+}
+
+.viewer-text {
+  color: white;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+/* Exit Button */
+.exit-btn {
+  position: absolute;
+  top: 1.5rem;
+  right: 1rem;
+  z-index: 20;
+}
+
+.exit-circle {
+  width: 2.5rem;  /* w-10 */
+  height: 2.5rem; /* h-10 */
+  background-color: rgba(0, 0, 0, 0.5);
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.exit-icon {
+  width: 1.25rem; /* w-5 */
+  height: 1.25rem; /* h-5 */
+  color: white;
+}
+
+/* Animations */
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 8px rgba(254,44,85,0.7);
+  }
+  50% {
+    box-shadow: 0 0 16px rgba(254,44,85,0.9);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.5);
+    opacity: 0.6;
+  }
+}
+
+.options-container {
+  height: 100vh;
+  width: 100vw;
+  position: absolute;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+/* Challenges list */
+.chat-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  height: 50vh;
+  width: 50vw;
+  overflow: hidden;
+  align-items: center;
+  justify-content: center;
+  animation: slideUp 0.4s ease-out;
+}
+
+.option-bubble {
+  background-color: rgba(0,0,0,0.5);
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: 100%;
+  height: 50px;
+}
+
+.chat-description {
+  font-weight: 500;
+  color: white;
+  font-size: 16px;
+}
+
+.chat-money-container {
+  display: flex;
+  gap: 0.25rem;
+  align-items: center;
+}
+
+.curr-amt {
+  color: white;
+  font-size: 1rem;
+}
+
+.goal-amt {
+  color: linear-gradient(45deg, #25f4ee, #fe2c55);
+  font-size: 1.75rem;
+  font-weight: 900;
+}
+
+.money-delimiter {
+  color: white;
+  font-size: 1rem;
+}
+
+.goal-amt-not-reached {
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: white;
+}
+
+.money-achieved {
+  box-shadow: 0 0 10px rgba(254, 44, 85, 0.7);
+  background: linear-gradient(45deg, #25f4ee, #fe2c55);
+  height: 60px;
+}
+
+.rightside-container {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.coin {
+  width: 70%;
+  height: 70%;
+}
+
+.pool-cash-btn {
+  background-color: #fe2c55;
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 25%;
+}
+
+.hidden {
+  display: none;
+}
+
+.option-donate-modal {
+  background-color: rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 60;
+  position: absolute;
+  height: 100vh;
+  width: 100vw;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.modal-island {
+  height: 35%;
+  width: 60%;
+  background-color: black;
+  border-radius: 25px;
+  color: white;
+  animation: slideUp 0.4s ease-out;
+  padding: 2% 2% 2% 2%;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0 }
+  to { opacity: 1 }
+}
+@keyframes slideUp {
+  from { transform: translateY(50px); opacity: 0 }
+  to { transform: translateY(0); opacity: 1 }
+}
+
+.modal-exit-icon {
+  width: 1.25rem; /* w-5 */
+  height: 1.25rem; /* h-5 */
+  color: white;
+  right: 5;
+  top: 5;
+}
+
+.modal-header-container {
+  display: flex;
+  flex-direction: column;
+  justify-items: center;
+  gap: 0.1rem;
+}
+
+.modal-header {
+  color: white;
+  font-weight: 800;
+  font-size: 1.5rem;
+}
+
+.modal-desc {
+  color: #D1D1D1;
+}
+
+.modal-progress {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  flex-grow: 1;
+}
+
+.amt {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  align-items: center;
+}
+
+.modal-curr-amt {
+  font-size: 4.5rem;
+  font-weight: bold;
+  color: white;
+}
+
+.modal-money-delimiter {
+  font-size: 6rem;
+  font-weight: bold;
+  color: #A1A1A1;
+}
+
+.modal-goal-amt {
+  font-size: 4.5rem;
+  font-weight: bold;
+  color: linear-gradient(45deg, #25f4ee, #fe2c55);
+}
+
+.modal-goal-amt-container {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+  padding-top: 5%;
+  margin-bottom: 1rem;
+}
+
+.progress {
+  font-style: italic;
+  color: white;
+  font-weight: 200;
+}
+
+.modal-contribution-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.modal-contribution-title {
+  color: white;
+  font-weight: bold;
+  font-size: 1.25rem;
+}
+
+.modal-input-box {
+  width: 100%;
+  height: 20%;
+  min-height: 50px;
+  display: flex;
+  padding-left: 4%;
+  align-items: center;
+  background-color: #303030;
+  border-radius: 10px;
+  border: 1px #DDDDDD;
+}
+
+.modal-max-amt {
+  color: #D1D1D1;
+}
+
+.modal-btn-container {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+  flex-grow: 1;
+  align-items: center;
+}
+
+.modal-cancel-btn {
+  border-radius: 10px;
+  border: 1px #DDDDDD;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 1.5rem 3rem 1.5rem 3rem;
+}
+
+.cancel-text {
+  color: white;
+  font-weight: 400;
+}
+
+.contribute-text {
+  color: white;
+  font-weight: 400;
+}
+
+.modal-contribute-btn {
+  border-radius: 10px;
+  border: 1px #DDDDDD;
+  background: linear-gradient(45deg, #25f4ee, #fe2c55);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 1.5rem 3rem 1.5rem 3rem;
+}
