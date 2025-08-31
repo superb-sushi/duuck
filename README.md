@@ -19,6 +19,7 @@ This project aims to design a new value-sharing solution that establishes a tran
 1. Users can create and participate in bounties related to content creation.
    - Bounties created will go through a check to ensure it is not harmful and avoids repetitive bounties
     - Users can follow bounties and be notified of new submissions.
+    - Users can contribute in bounties.
 2. Bounty management includes tracking progress, rewarding participants, and displaying active/completed bounties.
 	- Measures are in place to ensure that users cannot game the system.
 	- Users who started the bounties or have contributed the prize pool are not able to create submissions.
@@ -32,10 +33,10 @@ This project aims to design a new value-sharing solution that establishes a tran
 
 ### Anti Fraud Model
 
-1. Integrated machine learning model for fraud detection, leveraging user and transaction data to identify suspicious activities.
-2. Automated checks for system gaming, fake engagement, and other fraudulent behaviors.
-3. AML (Anti-Money Laundering) compliance features to monitor and prevent illicit value transfers.
-4. Backend endpoints for real-time fraud assessment and reporting, supporting a secure and compliant ecosystem.
+1. Collect and identified key metadata from user viewing and donating to the bounty/ content (time watched before donating, interactions with content components)
+2. Integrated machine learning model for fraud detection, leveraging user and macro donation data to predict potential money laundering intentions
+3. Automated checks for suspicious donation amounts and user application usage habits (how often the app is used vs how long the app was downloaded)
+4. Applied contextual understanding of model purpose to minimise inconvenience to regular viewers, hence opting for a lower recall but higher precision model in finding non fraudulent users. 
 
 ## What's next for Project Duuck
 - Add real-time notifications for new submissions and prize pool updates.
@@ -59,11 +60,6 @@ This project aims to design a new value-sharing solution that establishes a tran
 - PNG and JPG images for UI icons and backgrounds (`src/assets/`)
 - Custom CSS for component styling
 
-## Libraries
-
-- **Frontend:** Lynx, TypeScript, CSS
-- **Backend:** Python, scikit-learn, SQLAlchemy (or similar), FastAPI
-
 
 ## Getting Started
 
@@ -75,21 +71,45 @@ This project aims to design a new value-sharing solution that establishes a tran
 
 ### Installation
 
-#### Frontend
+## How to Start the Application
 
-```bash
-cd src
-npm install
-npm run dev
-```
+### Backend
 
-#### Backend
+#### Backend Initial Setup (Run Once)
 
 ```bash
 cd backend
+python -m venv .venv && .venv\Scripts\activate
 pip install -r requirements.txt
-python app/main.py
 ```
 
-### Testing
+#### Start the Backend Server
+
+```bash
+cd backend
+.venv\Scripts\activate
+uvicorn app.main:app --reload
+```
+
+## Rspeedy project (frontend)
+
+This is a ReactLynx project bootstrapped with `create-rspeedy`.
+
+## Getting Started
+First, [clone this github repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) into your local device. Navigate to the root folder.
+
+Then, install the dependencies:
+
+```bash
+npm install
+```
+
+Then, run the development server:
+
+```bash
+npm run dev
+```
+
+Scan the QRCode in the terminal with your LynxExplorer App to see the result.
+Click on `Navigate to Bounty Screen` to interact with the relevant portion of the App.
 
