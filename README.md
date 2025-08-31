@@ -39,4 +39,5 @@ npm run dev
 ```
 
 Scan the QRCode in the terminal with your LynxExplorer App to see the result.
-Click on `Navigate to Bounty Screen` to interact with the relevant portion of the App.
+
+Click on `Navigate to Bounty Screen` to interact with the relevant portion of the App. (Kindly ignore `Navigate to live Video Screen`)
