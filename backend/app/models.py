@@ -25,7 +25,15 @@ class Video(Base):
     id = Column(Integer, primary_key=True)
     creator_handle = Column(String, ForeignKey("users.handle"))
     title = Column(String)
+<<<<<<< HEAD
     phash = Column(String, nullable=True)  # mock perceptual hash
+=======
+    phash = Column(String)
+    length = Column(Integer)
+    views = Column(Integer, default=0)
+    votes = Column(Integer, default=0)
+    likes = Column(Integer, default=0)
+>>>>>>> 9b4395d28ee7a19e1f5eb93fb2d95a578d4d905f
     creator = relationship("User")
 
 class Session(Base):
@@ -58,6 +66,11 @@ class Bounty(Base):
     judging_start = Column(DateTime)
     judging_end = Column(DateTime)
     is_closed = Column(Boolean, default=False)
+<<<<<<< HEAD
+=======
+    following = Column(Boolean, default=False)
+    submissions = relationship("BountySubmission", backref="bounty")
+>>>>>>> 9b4395d28ee7a19e1f5eb93fb2d95a578d4d905f
 
 class BountyContribution(Base):
     __tablename__ = "bounty_contributions"
@@ -73,6 +86,10 @@ class BountySubmission(Base):
     creator_handle = Column(String, ForeignKey("users.handle"))  # Updated from creator_id
     video_id = Column(Integer, ForeignKey("videos.id"))
     submitted_at = Column(DateTime, default=datetime.utcnow)
+<<<<<<< HEAD
+=======
+    video = relationship("Video")
+>>>>>>> 9b4395d28ee7a19e1f5eb93fb2d95a578d4d905f
 
 class BountyVote(Base):
     __tablename__ = "bounty_votes"

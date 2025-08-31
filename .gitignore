@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Local
 .DS_Store
 *.local
@@ -14,3 +15,30 @@ dist/
 
 # Python
 /backend/.venv
+=======
+# Python
+*.pyc
+*.pyo
+__pycache__/
+*.env
+
+# Virtual Environment
+.venv/
+
+# VS Code
+.vscode/
+
+# Node.js
+node_modules/
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build
+build/
+dist/
+>>>>>>> 9b4395d28ee7a19e1f5eb93fb2d95a578d4d905f

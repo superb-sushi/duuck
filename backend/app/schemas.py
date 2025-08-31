@@ -8,6 +8,13 @@ class VideoCreate(BaseModel):
     creator_handle: str  # Updated from creator_id
     title: str
     phash: Optional[str] = None
+<<<<<<< HEAD
+=======
+    views: int = 0
+    votes: int = 0
+    likes: int = 0
+    duration: int = 0  # duration replaces length
+>>>>>>> 9b4395d28ee7a19e1f5eb93fb2d95a578d4d905f
 
 class SessionStart(BaseModel):
     viewer_handle: str  # Changed from viewer_id to viewer_handle
@@ -37,6 +44,11 @@ class BountyOut(BaseModel):
     judging_start: str
     judging_end: str
     is_closed: bool
+<<<<<<< HEAD
+=======
+    current_videos: List[Dict] = []
+    following: bool = False
+>>>>>>> 9b4395d28ee7a19e1f5eb93fb2d95a578d4d905f
 
 
 class BountyFollow(BaseModel):
