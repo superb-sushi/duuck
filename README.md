@@ -110,6 +110,6 @@ Then, run the development server:
 npm run dev
 ```
 
-Scan the QRCode in the terminal with your LynxExplorer App to see the result.
+Scan the QRCode in the terminal with your LynxExplorer App (preferably Android) to see the result.
 Click on `Navigate to Bounty Screen` to interact with the relevant portion of the App.
 
