@@ -96,7 +96,7 @@ uvicorn app.main:app --reload
 This is a ReactLynx project bootstrapped with `create-rspeedy`.
 
 ## Getting Started
-First, [clone this github repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) into your local device. Navigate to the root folder.
+First, [clone the `main` branch of this github repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) into your local device. Navigate to the root folder.
 
 Then, install the dependencies:
 
